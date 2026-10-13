@@ -1,10 +1,12 @@
 name: Release APK
 
-# Push a tag like v1.0.1 to build a signed APK and publish it as a GitHub Release.
-# Obtainium watches these releases and offers the update on the phone.
+# Change the number in VERSION and push to main to build a signed APK and publish it as a
+# GitHub Release. Obtainium watches these releases and offers the update on the phone.
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: [VERSION]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,9 +22,16 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq openjdk-21-jdk-headless aapt apksigner zipalign dalvik-exchange android-sdk-platform-23 zip unzip
 
-      - name: Set version from tag
+      - name: Read version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          V="$(tr -d '[:space:]' < VERSION)"
+          if gh release view "v$V" >/dev/null 2>&1; then
+            echo "::error::Release v$V already exists. Raise the number in VERSION."
+            exit 1
+          fi
+          echo "VERSION_NAME=$V" >> "$GITHUB_ENV"
           # Always higher than the hand-built 1.0 (versionCode 1) and every earlier release.
           echo "VERSION_CODE=$(( GITHUB_RUN_NUMBER + 100 ))" >> "$GITHUB_ENV"
 
@@ -48,7 +57,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "puppy-quest-$VERSION_NAME.apk" \
+          gh release create "v$VERSION_NAME" "puppy-quest-$VERSION_NAME.apk" --target "$GITHUB_SHA" \
             --title "Puppy Quest $VERSION_NAME" --generate-notes
 
       - name: Keep the Play Store bundle

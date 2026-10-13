@@ -16,12 +16,7 @@ Every release is signed with the same key, so updates install over the old versi
 
 ## Making a release
 
-Update `game/`, then push a version tag:
-
-```
-git tag v1.0.1
-git push origin v1.0.1
-```
+Update `game/`, raise the number in `VERSION` (for example `1.0.1` to `1.0.2`), and push to `main`.
 
 GitHub Actions builds `puppy-quest-1.0.1.apk`, signs it, and publishes it as a release. The unsigned Play Store bundle (`.aab`) is kept on the workflow run.
 
