@@ -1,0 +1,4 @@
+android/out/
+android/keys/
+*.jks
+*.keystore
