@@ -27,9 +27,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           V="$(tr -d '[:space:]' < VERSION)"
+          # Re-running for a version that is already released rebuilds the Play bundle only.
           if gh release view "v$V" >/dev/null 2>&1; then
-            echo "::error::Release v$V already exists. Raise the number in VERSION."
-            exit 1
+            echo "::notice::Release v$V already exists, so only the Play bundle is rebuilt. Raise VERSION for a new release."
+            echo "RELEASE_EXISTS=1" >> "$GITHUB_ENV"
           fi
           echo "VERSION_NAME=$V" >> "$GITHUB_ENV"
           # Always higher than the hand-built 1.0 (versionCode 1) and every earlier release.
@@ -54,6 +55,7 @@ jobs:
           cp android/out/puppy-quest-debug.apk "puppy-quest-$VERSION_NAME.apk"
 
       - name: Publish release
+        if: env.RELEASE_EXISTS != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -71,6 +73,10 @@ jobs:
             echo "::warning::No PLAY_UPLOAD_KEYSTORE_BASE64 secret, so the Play bundle is left unsigned."
             cp android/out/puppy-quest-release-unsigned.aab "puppy-quest-$VERSION_NAME-play-unsigned.aab"
             exit 0
+          fi
+          if [ -z "$UPLOAD_PASS" ]; then
+            echo "::error::Add the PLAY_UPLOAD_KEYSTORE_PASSWORD secret (and PLAY_UPLOAD_KEY_ALIAS if the alias isn't 'upload')."
+            exit 1
           fi
           echo "$UPLOAD_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           cp android/out/puppy-quest-release-unsigned.aab "$AAB"
