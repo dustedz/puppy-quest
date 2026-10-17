@@ -22,7 +22,7 @@ Already done by Claude:
 What only you can do, in order:
 
 1. **Turn on GitHub Pages**: repo **Settings > Pages**, Source "Deploy from a branch", Branch `main`, folder `/docs`, **Save**.
-2. **Create a Play Console developer account** at play.google.com/console ($25 one time, ID check). Choose a personal account unless you have a business.
+2. **Play Console account**: use the one you already have (the same account as Last Claim).
 3. **Make your upload key** (Claude can make it in a folder on your laptop, or run the `keytool` command below yourself) and add three repo secrets in **Settings > Secrets and variables > Actions**:
    - `PLAY_UPLOAD_KEYSTORE_BASE64`: the keystore as base64 text
    - `PLAY_UPLOAD_KEYSTORE_PASSWORD`: its password
@@ -34,8 +34,9 @@ What only you can do, in order:
 4. **Create the app** in Play Console: name Puppy Quest, Game, Free. Leave **Play App Signing** on (Google keeps the real signing key; a lost upload key can be reset).
 5. **Fill in App content**: privacy policy URL from above; Ads: no; Target audience: 6–8, 9–12 and 13+ (Families policy); Data safety: no data collected or shared; Content rating questionnaire (expect Everyone / PEGI 3); App access: no login needed.
 6. **Store listing**: paste the text from `android/store-listing.md`, upload the icon, feature graphic and screenshots from `android/art/`, and add a contact email.
-7. **Closed test**: Testing > Closed testing > create a track, upload the signed `-play.aab`, add at least **12 testers** (their Google account emails) and keep them opted in for **14 days in a row**. New personal accounts must do this before going public.
-8. **Apply for production** once the 14 days are up, then roll out.
+7. **Internal test first**: Testing > Internal testing, upload the signed `-play.aab`, add yourself, install from the Play link and check it runs.
+8. **Closed test**: Testing > Closed testing > create a track, upload the signed `-play.aab`, add at least **12 testers** (their Google account emails) and keep them opted in for **14 days in a row**. New personal accounts must do this for each new app before going public. The Last Claim testers can be reused.
+9. **Apply for production** once the 14 days are up, then roll out.
 
 ## What is in this folder
 
