@@ -78,7 +78,16 @@ jobs:
             echo "::error::Add the PLAY_UPLOAD_KEYSTORE_PASSWORD secret (and PLAY_UPLOAD_KEY_ALIAS if the alias isn't 'upload')."
             exit 1
           fi
-          echo "$UPLOAD_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          # Tolerate Windows line breaks or spaces picked up when the secret was pasted.
+          printf '%s' "$UPLOAD_B64" | tr -d ' \r\n\t' | base64 -d > "$RUNNER_TEMP/upload.jks"
+          UPLOAD_PASS="$(printf '%s' "$UPLOAD_PASS" | tr -d '\r\n')"
+          UPLOAD_ALIAS="$(printf '%s' "$UPLOAD_ALIAS" | tr -d ' \r\n')"
+          echo "Upload key file: $(stat -c %s "$RUNNER_TEMP/upload.jks") bytes, starts $(head -c 4 "$RUNNER_TEMP/upload.jks" | od -An -tx1 | tr -d ' '); password ${#UPLOAD_PASS} characters"
+          if ! keytool -list -keystore "$RUNNER_TEMP/upload.jks" -storepass "$UPLOAD_PASS" > "$RUNNER_TEMP/kl.txt" 2>&1; then
+            echo "::error::Could not open the upload key: $(grep -v JAVA_TOOL "$RUNNER_TEMP/kl.txt" | head -3 | tr '\n' ' ')"
+            exit 1
+          fi
+          grep -iE "keystore type|entries|PrivateKeyEntry" "$RUNNER_TEMP/kl.txt" | sed 's/,.*//' || true
           cp android/out/puppy-quest-release-unsigned.aab "$AAB"
           jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass "$UPLOAD_PASS" \
             -sigalg SHA256withRSA -digestalg SHA-256 "$AAB" "$UPLOAD_ALIAS"
