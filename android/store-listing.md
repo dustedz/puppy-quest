@@ -22,7 +22,7 @@ Explore a sunny town, collect paw coins and adopt ESSAs, emotional support stuff
 **Category:** Game > Casual (or Simulation)
 **Tags to consider:** Casual, Cute, Pets, Kids
 **Contact email:** [required]
-**Privacy policy URL:** [where you host privacy-policy.html]
+**Privacy policy URL:** https://dustedz.github.io/puppy-quest/privacy.html
 
 **Graphics (in art/):**
 - App icon 512x512: play-icon-512.png

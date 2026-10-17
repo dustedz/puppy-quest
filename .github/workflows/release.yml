@@ -60,8 +60,27 @@ jobs:
           gh release create "v$VERSION_NAME" "puppy-quest-$VERSION_NAME.apk" --target "$GITHUB_SHA" \
             --title "Puppy Quest $VERSION_NAME" --generate-notes
 
+      - name: Sign the Play Store bundle
+        env:
+          UPLOAD_B64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          UPLOAD_PASS: ${{ secrets.PLAY_UPLOAD_KEYSTORE_PASSWORD }}
+          UPLOAD_ALIAS: ${{ secrets.PLAY_UPLOAD_KEY_ALIAS || 'upload' }}
+        run: |
+          AAB="puppy-quest-$VERSION_NAME-play.aab"
+          if [ -z "$UPLOAD_B64" ]; then
+            echo "::warning::No PLAY_UPLOAD_KEYSTORE_BASE64 secret, so the Play bundle is left unsigned."
+            cp android/out/puppy-quest-release-unsigned.aab "puppy-quest-$VERSION_NAME-play-unsigned.aab"
+            exit 0
+          fi
+          echo "$UPLOAD_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          cp android/out/puppy-quest-release-unsigned.aab "$AAB"
+          jarsigner -keystore "$RUNNER_TEMP/upload.jks" -storepass "$UPLOAD_PASS" \
+            -sigalg SHA256withRSA -digestalg SHA-256 "$AAB" "$UPLOAD_ALIAS"
+          jarsigner -verify "$AAB"
+          rm -f "$RUNNER_TEMP/upload.jks"
+
       - name: Keep the Play Store bundle
         uses: actions/upload-artifact@v4
         with:
-          name: puppy-quest-${{ env.VERSION_NAME }}-play-bundle-unsigned
-          path: android/out/puppy-quest-release-unsigned.aab
+          name: puppy-quest-${{ env.VERSION_NAME }}-play-bundle
+          path: puppy-quest-*.aab
