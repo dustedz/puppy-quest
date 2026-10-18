@@ -38,6 +38,8 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--sky);color:var(-
 .wrap{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;background:rgba(42,33,64,.35);
   padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));box-sizing:border-box}
 @media (min-width:700px) and (min-height:560px){.wrap{align-items:center}}
+/* Rows size to their content, so the 3D preview box can't collapse and cover the rows below it on tall phone screens */
+@media (min-height:501px){.sheet{grid-auto-rows:max-content}}
 .sheet{background:var(--paper);border-radius:26px;max-width:440px;width:100%;box-sizing:border-box;padding:22px 20px 20px;box-shadow:0 6px 0 var(--shade);max-height:100%;overflow:auto;display:grid;gap:12px}
 .sheet h2{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.05;margin:0;color:var(--grape);text-wrap:balance}
 .sheet p{margin:0;font-size:16px;line-height:1.45}
@@ -269,9 +271,10 @@ const DIG_GEAR=Object.keys(GEAR).filter(k=>GEAR[k].dig);
 const SLOTS_G=[['neck','Neck'],['body','Body'],['head','Head'],['face','Face'],['leash','Leash']],SLOTNAME=Object.fromEntries(SLOTS_G);
 const PAL={skin:[0xf8d5b8,0xf2c29b,0xd9a37a,0xb07850,0x7a4e2f],hair:[0x5a3418,0x2b1a10,0xe6c068,0xc0502b,0x1b1b1f,0xff7ab8,0x7b4fd6,0x4fb3ff],
   shirt:[0x8a5cf6,0xff5d8f,0x2fbf8f,0xffc53d,0x4fb3ff,0xe23b3b,0xffffff,0x2a2140],pants:[0x2f4fbf,0x2a2140,0xff9ec7,0x6d8b74,0xb48cff,0xe9dcc0],shoes:[0xffffff,0xff5d8f,0x2a2140,0xffc53d,0x2fbf8f]};
-const STYLES=[['pony','Ponytail'],['pigtails','Pigtails'],['bob','Bob'],['long','Long'],['buns','Space buns'],['short','Short']];
+const STYLES=[['pony','Ponytail'],['pigtails','Pigtails'],['bob','Bob'],['long','Long'],['buns','Space buns'],['short','Short'],['spiky','Spiky'],['side','Side swoop'],['curly','Curly'],['buzz','Buzz cut']];
+const KIDS=[['girl','Girl'],['boy','Boy']],KID_STYLE={girl:'pony',boy:'spiky'};
 const HATS=[['none','None'],['cap','Cap'],['beanie','Beanie'],['bow','Bow'],['tiara','Tiara'],['bunny','Bunny ears']];
-const LOOK0={skin:1,hair:0,style:'pony',shirt:0,pants:0,shoes:0,hat:'none'};
+const LOOK0={kid:'girl',skin:1,hair:0,style:'pony',shirt:0,pants:0,shoes:0,hat:'none'};
 const KIND={1:'Cartoon ESSA',2:'Realistic ESSA',3:'Super realistic ESSA'};
 const STORES={
   valu:{name:'ValuMart',tag:'Save more. Hug more.',tier:1,dogs:['cartoon','bubble','spotty']},
@@ -726,16 +729,19 @@ function dayUpdate(dt){if(mode==='play'&&SET.daynight&&!inHome)dayT=(dayT+dt/DAY
 function person(o){const g=new THREE.Group();const shirt=mat(o.shirt),skin=mat(o.skin||0xf2c29b),pants=mat(o.pants||0x3b5bdb),hair=mat(o.hair),shoe=mat(o.shoes??0xffffff);const style=o.style||(o.pony?'pony':'short');
   const legs=[],arms=[],sc=o.scale||1;
   for(const s of[-1,1]){const p=new THREE.Group();p.userData.anim=true;p.position.set(.17*s,.75,0);g.add(p);mesh(new THREE.CylinderGeometry(.13,.12,.7,10),pants,0,-.35,0,p);mesh(new THREE.BoxGeometry(.24,.14,.38),shoe,0,-.72,.06,p);legs.push(p);}
-  mesh(new THREE.CylinderGeometry(.3,.37,.78,14),shirt,0,1.13,0,g);
+  if(o.boy)mesh(new THREE.CylinderGeometry(.35,.33,.78,14),shirt,0,1.13,0,g);else mesh(new THREE.CylinderGeometry(.3,.37,.78,14),shirt,0,1.13,0,g);
   for(const s of[-1,1]){const p=new THREE.Group();p.userData.anim=true;p.position.set(.43*s,1.42,0);g.add(p);mesh(new THREE.CylinderGeometry(.09,.085,.6,8),shirt,0,-.28,0,p);mesh(new THREE.SphereGeometry(.1,10,8),skin,0,-.62,0,p);arms.push(p);}
   mesh(new THREE.SphereGeometry(.36,20,16),skin,0,1.86,0,g);
-  const h=mesh(new THREE.SphereGeometry(.39,20,14,0,Math.PI*2,0,Math.PI*.55),hair,0,1.88,-.03,g);h.rotation.x=-.25;
+  const h=mesh(new THREE.SphereGeometry(style==='buzz'?.375:.39,20,14,0,Math.PI*2,0,Math.PI*(style==='buzz'?.42:.55)),hair,0,1.88,-.03,g);h.rotation.x=-.25;
   const tie=mat(0xff5d8f);
   if(style==='pony'){mesh(new THREE.SphereGeometry(.17,12,10),hair,0,1.95,-.42,g);mesh(new THREE.SphereGeometry(.13,12,10),hair,0,1.72,-.47,g);mesh(new THREE.TorusGeometry(.08,.03,6,12),tie,0,1.88,-.42,g);}
   if(style==='pigtails')for(const s of[-1,1]){mesh(new THREE.SphereGeometry(.15,12,10),hair,.42*s,1.78,-.08,g);mesh(new THREE.SphereGeometry(.11,12,10),hair,.47*s,1.58,-.1,g);mesh(new THREE.TorusGeometry(.07,.025,6,12),tie,.4*s,1.86,-.08,g).rotation.y=Math.PI/2;}
   if(style==='bob'||style==='long'){const b=mesh(new THREE.SphereGeometry(.42,20,14,0,Math.PI*2,0,Math.PI*.62),hair,0,1.86,-.06,g);b.rotation.x=-.45;}
   if(style==='long')mesh(new THREE.SphereGeometry(.3,14,12),hair,0,1.5,-.26,g).scale.set(1.25,1.5,.55);
   if(style==='buns')for(const s of[-1,1]){mesh(new THREE.SphereGeometry(.15,12,10),hair,.22*s,2.2,-.06,g);}
+  if(style==='spiky')for(const[x,z]of[[0,.18],[-.17,.1],[.17,.1],[-.1,-.08],[.1,-.08],[0,-.22],[-.24,-.12],[.24,-.12]]){const c=mesh(new THREE.ConeGeometry(.11,.34,6),hair,x,2.16-Math.hypot(x,z)*.35,z,g);c.rotation.set(z*1.6,0,-x*1.8);}
+  if(style==='side'){const w=mesh(new THREE.SphereGeometry(.22,14,10),hair,.06,2.06,.24,g);w.scale.set(1.7,.55,.75);w.rotation.z=-.3;}
+  if(style==='curly')for(let i=0;i<10;i++){const a=i/10*Math.PI*2;mesh(new THREE.SphereGeometry(.12,10,8),hair,Math.cos(a)*.3,2.05+Math.sin(i*1.7)*.05,Math.sin(a)*.3-.04,g);}
   if(o.cap==='cap'){const c=mesh(new THREE.SphereGeometry(.4,18,10,0,Math.PI*2,0,Math.PI/2),shirt,0,1.98,-.02,g);mesh(new THREE.BoxGeometry(.4,.04,.3),shirt,0,2.0,.4,g);}
   if(o.cap==='beanie'){mesh(new THREE.SphereGeometry(.41,18,10,0,Math.PI*2,0,Math.PI/2),mat(0xff5d8f),0,1.95,-.02,g);mesh(new THREE.SphereGeometry(.1,10,8),mat(0xffffff),0,2.38,-.02,g);}
   if(o.cap==='bow')for(const s of[-1,1]){const c=mesh(new THREE.ConeGeometry(.12,.26,12),mat(0xff5d8f),.25+.13*s,2.18,-.02,g);c.rotation.z=s*Math.PI/2;}
@@ -744,11 +750,12 @@ function person(o){const g=new THREE.Group();const shirt=mat(o.shirt),skin=mat(o
   if(o.beard)mesh(new THREE.SphereGeometry(.24,14,10),mat(0xf1f1f1),0,1.66,.2,g).scale.set(1,.8,.7);
   if(o.hat){mesh(new THREE.CylinderGeometry(.42,.42,.06,20),mat(o.hat),0,2.16,0,g);mesh(new THREE.CylinderGeometry(.26,.28,.4,16),mat(o.hat),0,2.36,0,g);}
   for(const s of[-1,1])mesh(new THREE.SphereGeometry(.045,8,6),mat(0x222222),.13*s,1.9,.33,g,false);
+  if(o.boy)for(const s of[-1,1])mesh(new THREE.BoxGeometry(.11,.025,.02),mat(0x3a2a1e),.13*s,1.99,.335,g,false).rotation.z=-.12*s;
   mesh(new THREE.TorusGeometry(.09,.025,6,12,Math.PI),mat(0xc0504d),0,1.76,.33,g,false).rotation.z=Math.PI;
   for(const s of[-1,1])mesh(new THREE.SphereGeometry(.06,8,6),mat(0xff9db0),.22*s,1.79,.28,g,false);
   g.scale.setScalar(sc);g.userData={legs,arms};return bake(g);}
 const player=new THREE.Group();scene.add(player);let hand;
-const lookOpts=L=>({skin:PAL.skin[L.skin],hair:PAL.hair[L.hair],style:L.style,shirt:PAL.shirt[L.shirt],pants:PAL.pants[L.pants],shoes:PAL.shoes[L.shoes],cap:L.hat});
+const lookOpts=L=>({boy:L.kid==='boy',skin:PAL.skin[L.skin],hair:PAL.hair[L.hair],style:L.style,shirt:PAL.shirt[L.shirt],pants:PAL.pants[L.pants],shoes:PAL.shoes[L.shoes],cap:L.hat});
 function buildPlayer(L){while(player.children.length)player.remove(player.children[0]);const p=person(lookOpts(L));player.add(p);
   player.userData={legs:p.userData.legs,arms:p.userData.arms,ph:player.userData.ph||0};hand=p.userData.arms[1];}
 buildPlayer(LOOK0);
@@ -1587,7 +1594,7 @@ function openLook(first){if(first!=null)lookFirst=first;const L=S.look;
   const ch=(k,list)=>list.map(([v,l])=>`<button class="chip2 ${L[k]===v?'on':''}" data-act="setLook" data-arg="${k}:${v}">${l}</button>`).join('');
   const row=(t,h)=>`<div class="wr"><div class="tag">${t}</div><div class="chips">${h}</div></div>`;
   openSheet(`<div class="pvbox"></div><div class="tag">${lookFirst?'New game':'My look'}</div><h2>${lookFirst?'Make your character':'Change your look'}</h2>
-    ${row('Skin',sw('skin'))}${row('Hair color',sw('hair'))}${row('Hair style',ch('style',STYLES))}${row('Hat',ch('hat',HATS))}${row('Shirt',sw('shirt'))}${row('Pants',sw('pants'))}${row('Shoes',sw('shoes'))}
+    ${row('I am a',ch('kid',KIDS))}${row('Skin',sw('skin'))}${row('Hair color',sw('hair'))}${row('Hair style',ch('style',STYLES))}${row('Hat',ch('hat',HATS))}${row('Shirt',sw('shirt'))}${row('Pants',sw('pants'))}${row('Shoes',sw('shoes'))}
     <div class="row"><button class="btn" data-act="lookDone">${lookFirst?"Let's go!":'Done'}</button></div>`,'dress');
   pvShow('p:'+JSON.stringify(L),()=>({g:person(lookOpts(L))}),1.3);mountBox();}
 const keepScroll=f=>{const st=sheet.scrollTop;f();sheet.scrollTop=st;};
@@ -1650,7 +1657,7 @@ const ACTS={
   wear:arg=>{const [k,id]=arg.split(':');const info=S.dogs[dressI];if(!info)return;if(k==='leash')S.leash=id||null;else{if(id)info.gear[k]=id;else delete info.gear[k];}
     dressAll();if(inHome)homeDogsBuild();save();keepScroll(()=>openDress());},
   look:()=>openLook(false),
-  setLook:arg=>{const [k,v]=arg.split(':');S.look[k]=k in PAL?+v:v;buildPlayer(S.look);save();keepScroll(()=>openLook());},
+  setLook:arg=>{const [k,v]=arg.split(':');if(k==='kid'&&S.look.kid!==v){S.look.style=KID_STYLE[v];if(v==='boy'&&(S.look.hat==='bow'||S.look.hat==='tiara'))S.look.hat='cap';}S.look[k]=k in PAL?+v:v;buildPlayer(S.look);save();keepScroll(()=>openLook());},
   lookDone:()=>{closeSheet();if(lookFirst){lookFirst=false;toast('Find gold paw coins to buy your first ESSA!');}},
   toggleOut:i=>{const d=S.dogs[+i];if(!d)return;const out=S.dogs.filter(x=>x.out!==false).length;if(d.out===false&&out>=4)return;d.out=d.out===false;respawnDogs();if(inHome)homeDogsBuild();save();openBox();},
   adopt:type=>{const dg=DOGS[type];openSheet(`<div class="tag">${dg.label}</div><h2>Name your ESSA</h2><div class="pvbox"></div>
