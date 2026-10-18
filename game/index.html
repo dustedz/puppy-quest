@@ -344,19 +344,19 @@ const SET=Object.assign({sound:true,music:true,lefty:false,track:0,autocam:true,
 const saveSet=()=>store.set(SETKEY,SET);
 function fresh(){return{coins:0,dogs:[],pos:null,savedAt:0,owned:[],leash:null,look:{...LOOK0},
   q:{bones:{s:'new',n:0},flowers:{s:'new',n:0},walk:{s:'new',f:[0,0,0,0]},show:{s:'new'},chicks:{s:'new',n:0},ducks:{s:'new',n:0},mail:{s:'new',f:[0,0,0,0]},cupcakes:{s:'new',n:0}},home:{own:false,wall:0,floor:0,paint:0,f:{}},
-  st:{...ST0},stk:[],sea:{}};}
-const ST0={hug:0,fetch:0,dig:0,coins:0,drive:0,again:0,shows:0,showBest:0,night:0,hills:0,rename:0,bed:0,brush:0,bath:0,treat:0,photo:0,hunt:0,agBest:0,popBest:0,hideAll:0,pk:0}; // lifetime counts for the sticker book
+  st:{...ST0},stk:[],sea:{},town:{pick:0}};}
+const ST0={hug:0,fetch:0,dig:0,coins:0,drive:0,again:0,shows:0,showBest:0,night:0,hills:0,rename:0,bed:0,brush:0,bath:0,treat:0,photo:0,hunt:0,agBest:0,popBest:0,hideAll:0,pk:0,ice:0,sky:0,spin:0}; // lifetime counts for the sticker book
 const valid=s=>!!(s&&s.q&&Array.isArray(s.dogs));
 const owns=id=>S.owned.includes(id);
 function migrate(s){s.owned=s.owned||[];s.home=Object.assign({own:false,wall:0,floor:0,paint:0,f:{}},s.home||{});s.home.f=s.home.f||{};const fq=fresh().q;for(const k in fq)if(!s.q[k])s.q[k]=fq[k];s.look=Object.assign({...LOOK0},s.look||{});if(s.leash===undefined)s.leash=null;s.dogs.forEach(d=>{d.gear=d.gear||{};if(d.joy==null)d.joy=70;d.care=d.care||{};});s.sea=s.sea&&typeof s.sea==='object'?s.sea:{};
-  s.st=Object.assign({...ST0},s.st||{});s.stk=Array.isArray(s.stk)?s.stk:[];
+  s.st=Object.assign({...ST0},s.st||{});s.town=Object.assign({pick:0},s.town&&typeof s.town==='object'?s.town:{});s.stk=Array.isArray(s.stk)?s.stk:[];
   const give=(id,slot)=>{if(!s.owned.includes(id))s.owned.push(id);if(slot)s.dogs.forEach(d=>{if(!d.gear[slot])d.gear[slot]=id;});};
   if(s.acc){const A=s.acc;if(A.harness)give('harness_red','body');if(A.collar)give('collar_pink','neck');if(A.crown)give('crown','head');if(A.leash){give('leash_purple');s.leash=s.leash||'leash_purple';}delete s.acc;}
   for(const id of Object.keys(GEAR)){const q=GEAR[id].quest;if(q&&s.q[q]&&s.q[q].s==='done')give(id);}return s;}
 const readSlot=i=>{const s=store.get(slotKey(i));return valid(s)?s:null};
 {const old=store.get('puppyquest.v1');if(valid(old)&&!readSlot(1)){old.savedAt=Date.now();store.set(slotKey(1),old);store.set(LASTKEY,1);}store.del('puppyquest.v1');}
 let slot=0,S=fresh();
-function save(){if(!slot||mode!=='play')return false;S.savedAt=Date.now();const sp=inHome?{x:HDOOR.x,z:HDOOR.z+.6}:player.position;S.pos=[+sp.x.toFixed(1),+sp.z.toFixed(1)];
+function save(){if(!slot||mode!=='play')return false;S.savedAt=Date.now();const sp=inHome?{x:HDOOR.x,z:HDOOR.z+.6}:ride?ride:player.position;S.pos=[+sp.x.toFixed(1),+sp.z.toFixed(1)];
   return store.set(slotKey(slot),S)&&store.set(LASTKEY,slot);}
 const has=t=>S.dogs.some(d=>d.type===t);
 const hasTier=t=>S.dogs.some(d=>DOGS[d.type]&&DOGS[d.type].tier===t);
@@ -606,7 +606,7 @@ function buildWorld(){
   bench(-6,27,0);bench(6,27,0);bench(-11,15,Math.PI/2);
   for(const [x,z] of [[9,9],[-9,9],[12,24],[-13,22]]){const b=mesh(new THREE.CylinderGeometry(1.3,1.4,.35,16),mat(0x8a5a3c),x,.17,z);
     const fb=new THREE.Group();fb.position.set(x,0,z);scene.add(fb);for(let i=0;i<7;i++){const a=i/7*Math.PI*2;flowerMesh(Math.cos(a)*.8,Math.sin(a)*.8,[0xff5d8f,0xffc53d,0xffffff,0xb48cff][i%4],.35,fb);}bake(fb);circles.push({x,z,r:1.4});}
-  buildPark();
+  buildPark();buildTown();
   // trees
   seed=11;
   for(let i=0;i<300;i++){const x=(rnd()*2-1)*122,z=(rnd()*2-1)*122;if(blocked(x,z,3.5)||onRoad(x,z,3)||inNoTree(x,z,2)||Math.abs(x)<3&&z<10&&z>-14||Math.abs(z-6)<2.5&&Math.abs(x)<42||Math.hypot(x,z-18)<15)continue;tree(x,z,rnd());}
@@ -1247,7 +1247,7 @@ const HOME_ACTS={
     openSheet(`<div class="tag">Meadow Ln</div><h2>It's your house!</h2><p>Welcome to your Dream Home. It came with a round rug and plush pup beds. Buy more furniture from the catalog by the door inside. You can repaint the outside any time from Walls and floor.</p>
       <div class="row"><button class="btn" data-act="goIn">Go inside</button><button class="btn alt" data-act="close">Later</button></div>`);},
   goIn:()=>{closeSheet();enterHome();},
-  goHome:()=>{closeSheet();if(driving)exitCar(true);enterHome();},
+  goHome:()=>{closeSheet();rideEnd(true);if(driving)exitCar(true);enterHome();},
   furn:()=>openFurn(),furnNav:d=>openFurn(furnI+(+d)),
   furnCol:k=>{const id=FURN_IDS[furnI],f=S.home.f[id];k=+k;if(f){f.c=k;refreshRoom();save();}else furnC=k;keepScroll(()=>openFurn());},
   buyFurn:id=>{const F=FURN[id];if(!F||S.home.f[id]||S.coins<F.price)return;S.coins-=F.price;S.home.f[id]={c:furnC,x:F.x,z:F.z,r:F.ry||0};
@@ -1430,7 +1430,7 @@ function spawnQuestItems(id){
   if(id==='mail')mailSet().forEach((m,i)=>addItem('mail',m.x,m.z,{fi:i,done:!!S.q.mail.f[i],q:id,ry:m.ry}));}
 function removeItem(it){it.on=false;scene.remove(it.m);if(it.beam)scene.remove(it.beam);}
 function collect(it){
-  if(it.kind==='coin'){earn(5);coinSnd();it.on=false;it.m.visible=false;it.back=clock+6;floatText('+5',it.m.position);}
+  if(it.kind==='coin'){earn(5);coinSnd();it.on=false;it.m.visible=false;it.back=clock+20;floatText('+5',it.m.position);}
   else if(it.kind==='bone'){S.q.bones.n++;removeItem(it);bark();floatText('Bone!',it.m.position);if(S.q.bones.n>=5)toast('All 5 bones found! Go back to Grandpa Joe.');else toast(`Bone ${S.q.bones.n} of 5`);}
   else if(it.kind==='flower'){S.q.flowers.n++;removeItem(it);beep(1200,.15,'triangle',.08,1.5);floatText('Flower!',it.m.position);if(S.q.flowers.n>=6)toast('6 flowers! Bring them to Lily.');else toast(`Flower ${S.q.flowers.n} of 6`);}
   else if(it.kind==='flag'){if(it.done||!S.dogs.length||S.q.walk.s!=='active')return;it.done=true;S.q.walk.f[it.fi]=1;it.m.userData.cloth.material.color.set(0x2fbf8f);jingle();
@@ -1451,7 +1451,7 @@ function buildBall(){const g=new THREE.Group();mesh(new THREE.SphereGeometry(.24
   for(const r of[0,Math.PI/2]){const t=mesh(new THREE.TorusGeometry(.243,.03,6,24),mat(0xffe14d),0,0,0,g,false);t.rotation.set(Math.PI/2,r,0);}
   g.visible=false;scene.add(g);ball.m=g;}
 function ballReset(){if(ball.dog)ball.dog.fetching=false;ball.ph=null;ball.dog=null;if(ball.m)ball.m.visible=false;}
-const canThrow=()=>mode==='play'&&!paused&&!driving&&!inHome&&!ball.ph&&dogsW.length>0&&!photo&&!(PG&&PG.k==='hide');
+const canThrow=()=>mode==='play'&&!paused&&!driving&&!ride&&!inHome&&!ball.ph&&dogsW.length>0&&!photo&&!(PG&&PG.k==='hide');
 function throwBall(){if(!canThrow())return;audio();const P=player.position,a=player.rotation.y,dist=11+Math.random()*4;
   const to={x:P.x+Math.sin(a)*dist,z:P.z+Math.cos(a)*dist};collide(to,.5);
   ball.a.set(P.x+Math.sin(a)*.6,1.5,P.z+Math.cos(a)*.6);ball.b.set(to.x,.24,to.z);ball.t=0;ball.ph='fly';
@@ -1469,7 +1469,7 @@ function fetchMove(d,dt){const p=d.g.position,P=player.position;d.fetchT+=dt;con
   if(ball.ph==='ground'&&(dist<1||d.fetchT>9)){if(dist>=1)p.set(ball.b.x-dx/dist*.6,0,ball.b.z-dz/dist*.6);ball.ph='carry';ball.t=0;d.fetchT=0;bark();}
   else if(back&&(dist<2||d.fetchT>14))fetchDone(d);
   return v;}
-function fetchDone(d){ballReset();S.st.fetch++;earn(3);addJoy(S.dogs[d.idx],5);coinSnd();hearts(d.g.position.clone().setY(2));d.jump=1;floatText('+3',d.g.position);
+function fetchDone(d){ballReset();S.st.fetch++;earn(2);addJoy(S.dogs[d.idx],5);coinSnd();hearts(d.g.position.clone().setY(2));d.jump=1;floatText('+2',d.g.position);
   toast(['Good catch, ','Nice fetch, ','Woohoo, ','Great job, '][S.st.fetch%4]+d.name+'!');refreshHUD();}
 function turnTo(g,dx,dz,k){let da=Math.atan2(dx,dz)-g.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));g.rotation.y+=da*Math.min(1,k);}
 
@@ -1607,7 +1607,7 @@ function bedtime(){if(!S.dogs.length)return toast('Bring home an ESSA first!');
 /* ---------- photo mode ---------- */
 // Your character turns to face the camera, the ESSAs line up beside you, and Snap saves a framed picture.
 let photo=null,lastPhoto=null;const POSES=[['wave','Wave'],['cheer','Cheer'],['hug','Big hug'],['dance','Dance']];
-function enterPhoto(){if(mode!=='play'||driving||!wrap.hidden||photo||PG)return;audio();photo={pose:0,z:camZoom,p:camPitch};camZoom=inHome?.6:.42;camPitch=.3;camYaw=player.rotation.y;
+function enterPhoto(){if(mode!=='play'||driving||ride||!wrap.hidden||photo||PG)return;audio();photo={pose:0,z:camZoom,p:camPitch};camZoom=inHome?.6:.42;camPitch=.3;camYaw=player.rotation.y;
   document.body.classList.add('photo');$('photoUi').hidden=false;poseLbl();dogsW.forEach(d=>d.jump=1);}
 function exitPhoto(){if(!photo)return;camZoom=photo.z;camPitch=photo.p;photo=null;document.body.classList.remove('photo');$('photoUi').hidden=true;
   player.userData.arms.forEach(a=>{a.rotation.z=0;});}
@@ -1717,6 +1717,150 @@ function collectSea(it){const s=SEASONS[season()],k=seaKey();S.sea[k]=(S.sea[k]|
   else{earn(40);toast(`All 8 ${s.items} found! You already have the ${G.name}, so here are 40 paw coins.`);}}
 const seaLabel=()=>SEASONS[SET.season]?SEASONS[SET.season].name:`Auto (${SEASONS[autoSeason()].name})`;
 
+/* ---------- town wishes: big things to save paw coins for ---------- */
+// Coins go into the Wish Jar by the fountain, one wish at a time. Each finished wish builds something new in town.
+const WISHES=[
+  {id:'fountain',ic:'⛲',name:'Rainbow Fountain',cost:300,desc:'The fountain in the middle of town sparkles with every color of the rainbow, day and night.',done:'The fountain glows with rainbow colors now. Go and take a look!'},
+  {id:'icecream',ic:'🍦',name:'Ice Cream Cart',cost:500,x:18,z:18,rad:1.7,act:'Ice cream',desc:'Scoop opens an ice cream cart by the fountain. Share a cone with your ESSAs to fill up their hearts.',done:'Scoop\'s Ice Cream Cart is open by the fountain. Share a cone with your ESSAs!'},
+  {id:'carousel',ic:'🎠',name:'Puppy-Go-Round',cost:800,x:26,z:38,rad:4.4,act:'Ride',desc:'A merry-go-round with plush pups that bob up and down, right next to the town square.',done:'The Puppy-Go-Round is spinning next to the town square. Hop on for a ride!'},
+  {id:'balloon',ic:'🎈',name:'Hot Air Balloon',cost:1200,x:-26,z:59,rad:2,act:'Fly',desc:'A rainbow balloon near the Dream Home. Float high above the whole town with your ESSAs.',done:'The Hot Air Balloon is waiting near the Dream Home. Climb in and fly over town!'},
+  {id:'statue',ic:'🏆',name:'Golden Pup Statue',cost:2000,x:-18,z:18,rad:1.7,act:'Statue',desc:'A shiny gold statue of your favorite ESSA, right by the fountain for the whole town to see.',done:'The Golden Pup Statue stands by the fountain. Which ESSA should it be?'}];
+const JAR={x:0,z:31},ICE=[['🍓','Strawberry'],['🍫','Chocolate'],['🌈','Rainbow']],ICE_COST=5;
+const wishHave=w=>Math.min(w.cost,S.town[w.id]||0),wishOk=w=>wishHave(w)>=w.cost;
+const curWish=()=>WISHES.find(w=>!wishOk(w)),wishDone=()=>WISHES.filter(wishOk).length;
+const TW={};let jarFill=null,fountainFx=null,rainbowMat=null,carou=null,balloonG=null,statueKey='',ride=null;
+function buildTown(){
+  // the Wish Jar: a big glass jar that fills with gold as coins go in
+  const g=new THREE.Group();g.position.set(JAR.x,0,JAR.z);scene.add(g);cullAdd(g,JAR.x,JAR.z,120);
+  mesh(new THREE.CylinderGeometry(1.1,1.2,.5,20),mat(0xd8d2c8),0,.25,0,g);
+  jarFill=mesh(new THREE.CylinderGeometry(.78,.78,1,20),mat(0xffc53d,{rough:.35,metal:.4,em:0x6b4a00,emI:.5}),0,.5,0,g,false);
+  mesh(new THREE.CylinderGeometry(.86,.86,1.9,20),mat(0xdff4ff,{rough:.08,op:.32}),0,1.45,0,g,false);
+  mesh(new THREE.CylinderGeometry(.62,.62,.26,16),mat(0xff5d8f),0,2.53,0,g);mesh(new THREE.BoxGeometry(.5,.06,.12),mat(0x2a2140),0,2.67,0,g,false);
+  const tag=sprite('Wish Jar',{fg:'#ffc53d'});tag.scale.set(2.4,.9,1);tag.position.y=3.5;g.add(tag);
+  circles.push({x:JAR.x,z:JAR.z,r:1.2});spots.push({x:JAR.x,z:JAR.z,r:2.8,label:'Wish Jar',fn:()=>openWish()});
+  // rainbow fountain: color-changing water plus little jumping jets
+  rainbowMat=new THREE.MeshStandardMaterial({color:0x5cc8f0,roughness:.15,metalness:.1});
+  fountainFx=new THREE.Group();fountainFx.position.set(0,0,18);fountainFx.visible=false;scene.add(fountainFx);
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2,m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.1,transparent:true,opacity:.85});
+    const s=mesh(new THREE.SphereGeometry(.22,10,8),m,Math.cos(a)*2.3,1,Math.sin(a)*2.3,fountainFx,false);s.userData.ph=i/8;}
+  // a "coming soon" sign at each spot, swapped for the real thing once the wish comes true
+  for(const w of WISHES){const t=TW[w.id]={};if(w.x==null)continue;
+    noTree.push({x0:w.x-w.rad-3,x1:w.x+w.rad+3,z0:w.z-w.rad-3,z1:w.z+w.rad+3});
+    t.col={x:w.x,z:w.z,r:.3};circles.push(t.col);
+    const o=new THREE.Group();o.position.set(w.x,0,w.z);scene.add(o);cullAdd(o,w.x,w.z,90);const s=t.sign=new THREE.Group();o.add(s);
+    mesh(new THREE.BoxGeometry(.18,2.2,.18),mat(0x9a6232),0,1.1,0,s);
+    const b=new THREE.Mesh(new THREE.PlaneGeometry(2.8,1.4),new THREE.MeshBasicMaterial({map:textTex(w.name,{w:512,h:256,bg:'#fffaf2',fg:'#7b4fd6',size:58}),side:THREE.DoubleSide}));b.position.y=2.4;s.add(b);
+    const cs=sprite('Coming soon!',{fg:'#ff8fb3'});cs.scale.set(2.6,1,1);cs.position.y=3.7;s.add(cs);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(w.rad-.12,w.rad+.12,40),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.55}));ring.rotation.x=-Math.PI/2;ring.position.y=.03;s.add(ring);
+    spots.push({x:w.x,z:w.z,get r(){return wishOk(w)?w.rad+2.2:2.6},get label(){return wishOk(w)?w.act:'Town wish'},fn:()=>wishOk(w)?wishUse(w.id):openWish()});}}
+function refreshTown(){if(!jarFill)return;if(ride)rideEnd(true);const w=curWish(),h=Math.max(.03,w?wishHave(w)/w.cost:1)*1.85;jarFill.scale.y=h;jarFill.position.y=.5+h/2;
+  const rb=wishOk(WISHES[0]);fountainFx.visible=rb;if(rb)water.material=rainbowMat;else water.material=mat(0x5cc8f0,{rough:.15,metal:.1});
+  for(const x of WISHES){const t=TW[x.id];if(!t.sign)continue;const ok=wishOk(x);t.sign.visible=!ok;t.col.r=ok?x.rad:.3;
+    if(ok&&!t.g)t.g={icecream:buildCart,carousel:buildCarousel,balloon:buildBalloon,statue:buildStatue}[x.id](x);
+    else if(!ok&&t.g){scene.remove(t.g);t.g=null;if(x.id==='carousel')carou=null;if(x.id==='balloon')balloonG=null;if(x.id==='statue')statueKey='';}}
+  if(TW.statue.g)statueDog();}
+function wishUse(id){if(id==='icecream')openIce();else if(id==='statue')openStatue();else rideStart(id);}
+function buildCart(w){const g=new THREE.Group();g.position.set(w.x,0,w.z);g.rotation.y=-Math.PI/2;scene.add(g);cullAdd(g,w.x,w.z,110);
+  mesh(new THREE.BoxGeometry(2.6,1.1,1.3),mat(0xfffaf2),0,.85,0,g);mesh(new THREE.BoxGeometry(2.64,.24,1.34),mat(0xff9ec7),0,1.2,0,g);
+  mesh(new THREE.BoxGeometry(2.9,.12,1.6),mat(0xff5d8f),0,1.46,0,g);
+  for(const s of[-1,1]){const wh=mesh(new THREE.CylinderGeometry(.38,.38,.14,16),mat(0x2a2140),.9*s,.38,.7,g);wh.rotation.x=Math.PI/2;}
+  mesh(new THREE.CylinderGeometry(.05,.05,2.2,6),mat(0xffffff),.9,2.5,-.3,g);
+  const um=mesh(new THREE.ConeGeometry(1.7,.7,10),mat(0xff9ec7,{flat:true}),.9,3.6,-.3,g);um.castShadow=true;
+  // a giant cone on top
+  const cone=mesh(new THREE.ConeGeometry(.32,.9,12),mat(0xe0a35c),-.7,1.98,0,g);cone.rotation.x=Math.PI;
+  [[0xff9ec7,2.55],[0x8a5236,2.95]].forEach(([c,y])=>mesh(new THREE.SphereGeometry(.36,14,10),mat(c),-.7,y,0,g));
+  const v=person({shirt:0xffffff,hair:0x5a3418,pants:0xff9ec7,hat:0xffffff});v.position.set(.4,0,-1.25);g.add(v);
+  const tag=sprite('Ice Cream',{fg:'#ff8fb3'});tag.scale.set(2.6,1,1);tag.position.set(0,4.5,0);g.add(tag);bake(g);return g;}
+function buildCarousel(w){const g=new THREE.Group();g.position.set(w.x,0,w.z);scene.add(g);cullAdd(g,w.x,w.z,100);
+  mesh(new THREE.CylinderGeometry(4.2,4.4,.45,28),mat(0xfff6f0),0,.22,0,g);
+  const top=new THREE.Group();top.position.y=.45;g.add(top);
+  mesh(new THREE.CylinderGeometry(3.95,3.95,.12,28),mat(0xff9ec7),0,.06,0,top);
+  mesh(new THREE.CylinderGeometry(.4,.4,4.4,12),mat(0xe8c25a,{metal:.5,rough:.3}),0,2.2,0,top);
+  const roof=mesh(new THREE.ConeGeometry(4.7,1.9,16),mat(0xff5d8f,{flat:true}),0,5.15,0,top);roof.castShadow=true;
+  mesh(new THREE.CylinderGeometry(4.7,4.7,.45,16,1,true),mat(0xfffaf2,{flat:true}),0,4.1,0,top,false);
+  mesh(new THREE.SphereGeometry(.3,12,10),mat(0xffc53d,{metal:.4,rough:.3}),0,6.2,0,top);
+  for(let i=0;i<16;i++){const a=i/16*Math.PI*2;mesh(new THREE.SphereGeometry(.11,8,6),mat([0xffc53d,0x7fd8ff][i%2],{em:[0xffc53d,0x7fd8ff][i%2],emI:.7}),Math.cos(a)*4.72,3.88,Math.sin(a)*4.72,top,false);}
+  const pups=[],types=['cartoon','bubble','spotty'];
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2,x=Math.cos(a)*3,z=Math.sin(a)*3;
+    mesh(new THREE.CylinderGeometry(.06,.06,4,8),mat(0xe8c25a,{metal:.5,rough:.3}),x,2,z,top,false);
+    const d=buildDog(types[i%3]);d.g.scale.setScalar(1.15);d.g.position.set(x,.9,z);d.g.rotation.y=-a;top.add(d.g);bake(d.g);pups.push({g:d.g,ph:i*1.1});}
+  const seat=new THREE.Object3D();seat.position.set(Math.cos(Math.PI/6)*3,.1,Math.sin(Math.PI/6)*3);top.add(seat);
+  carou={g,top,pups,seat,a:0,spd:.35};return g;}
+function buildBalloon(w){const g=new THREE.Group();g.position.set(w.x,0,w.z);scene.add(g);
+  const pad=mesh(new THREE.CircleGeometry(3,28),mat(0xe9dcc0),0,.02,0,g,false);pad.rotation.x=-Math.PI/2;
+  const b=new THREE.Group();g.add(b);const wk=mat(0xa86b3c,{flat:true});
+  mesh(new THREE.BoxGeometry(2.4,.12,2.4),wk,0,.08,0,b);
+  for(const [x,z,sx,sz] of[[0,1.15,2.4,.12],[0,-1.15,2.4,.12],[1.15,0,.12,2.4],[-1.15,0,.12,2.4]])mesh(new THREE.BoxGeometry(sx,1.05,sz),wk,x,.58,z,b);
+  for(const sx of[-1,1])for(const sz of[-1,1]){const r=mesh(new THREE.CylinderGeometry(.03,.03,3.7,4),mat(0x6b4a2f),sx*.95,2.9,sz*.95,b,false);r.rotation.set(-sz*.06,0,sx*.06);}
+  mesh(new THREE.CylinderGeometry(.3,.35,.35,10),mat(0x555566,{metal:.6,rough:.4}),0,4.45,0,b);
+  const flame=mesh(new THREE.ConeGeometry(.22,.7,8),new THREE.MeshBasicMaterial({color:0xffa53d}),0,4.95,0,b,false);
+  mesh(new THREE.CylinderGeometry(2.1,1.2,1.5,16,1,true),mat(0xffc53d,{flat:true}),0,5.35,0,b);
+  const cols=[0xff5d8f,0xff8a2a,0xffc53d,0x2fbf8f,0x4fb3ff,0x7b4fd6,0xff9ec7,0xfffaf2];
+  for(let i=0;i<8;i++){const m=mesh(new THREE.SphereGeometry(4.3,4,14,i/8*Math.PI*2,Math.PI/4),mat(cols[i]),0,10.4,0,b);m.scale.y=1.15;}
+  balloonG={g,b,flame};return g;}
+function buildStatue(w){const g=new THREE.Group();g.position.set(w.x,0,w.z);g.rotation.y=Math.PI/2;scene.add(g);cullAdd(g,w.x,w.z,110);
+  const mb=mat(0xf1ece4,{rough:.5});mesh(new THREE.BoxGeometry(2.5,1.3,2.5),mb,0,.65,0,g);mesh(new THREE.BoxGeometry(2.9,.22,2.9),mb,0,1.41,0,g);mesh(new THREE.BoxGeometry(2.9,.22,2.9),mb,0,.11,0,g);
+  g.userData.hold=new THREE.Group();g.userData.hold.position.y=1.52;g.add(g.userData.hold);return g;}
+// gold copy of the chosen ESSA, wearing its gear, with its name floating above
+function statueDog(){const g=TW.statue.g,info=S.dogs[S.town.pick]||S.dogs[0],type=info?info.type:'beagle',name=info?info.name:'Lucy',gear=info?info.gear:{};
+  const key=type+name+JSON.stringify(gear);if(key===statueKey)return;statueKey=key;const h=g.userData.hold;while(h.children.length)h.remove(h.children[0]);
+  const d=buildDog(type);dressWith(d,gear);const gold=mat(0xe8c25a,{metal:.75,rough:.28,em:0x3a2a00,emI:.6});
+  d.g.traverse(o=>{if(o.isMesh)o.material=gold;});d.g.scale.multiplyScalar(2.1);h.add(d.g);bake(d.g);
+  const t=sprite(name,{fg:'#ffc53d'});t.scale.set(2.8,1.05,1);t.position.y=3.9;h.add(t);}
+function townUpdate(dt){
+  if(fountainFx&&fountainFx.visible){const hu=(clock*.06)%1;rainbowMat.color.setHSL(hu,.75,.6);rainbowMat.emissive.setHSL(hu,.8,.35);spout.scale.setScalar(1.15+Math.sin(clock*5)*.15);
+    fountainFx.children.forEach((s,i)=>{const k=(clock*.9+s.userData.ph)%1;s.position.y=.8+Math.sin(k*Math.PI)*2.2;s.material.color.setHSL((hu+i/8)%1,.85,.65);});}
+  if(carou){carou.spd+=((ride&&ride.k==='carousel'?1.1:.35)-carou.spd)*Math.min(1,dt*1.5);carou.a+=carou.spd*dt;carou.top.rotation.y=carou.a;
+    carou.pups.forEach(p=>p.g.position.y=.9+Math.sin(clock*2.4+p.ph)*.35);}
+  if(balloonG&&!(ride&&ride.k==='balloon')){balloonG.b.position.y=Math.sin(clock*1.2)*.08;balloonG.flame.visible=Math.sin(clock*.7)>.6;}}
+/* rides: the Puppy-Go-Round and the Hot Air Balloon carry the player around for a little while */
+function rideStart(k){if(ride||driving||photo||PG||mode!=='play')return;if(k==='carousel'&&!carou||k==='balloon'&&!balloonG)return;closeSheet();ballReset();
+  const P=player.position;ride={k,t:0,T:k==='balloon'?30:14,x:P.x,z:P.z};dogsW.forEach((d,i)=>{d.sniff=null;d.leash.forEach(m=>m.visible=false);if(k==='balloon'&&i>1)d.g.visible=false;});
+  if(k==='balloon'){S.st.sky++;toast(dogsW.length?`Up, up and away! ${dogsW[0].name} climbs in with you.`:'Up, up and away!');}else{S.st.spin++;toast('Wheee! Round and round you go.');}
+  jingle();save();refreshHUD();}
+function rideUpdate(dt){const r=ride,P=player.position;r.t+=dt;
+  if(r.k==='carousel'){camPitch+=(.32-camPitch)*Math.min(1,dt*2);const prev=P.clone();carou.seat.getWorldPosition(P);P.y=.57;const dx=P.x-prev.x,dz=P.z-prev.z;if(dx*dx+dz*dz>1e-6)player.rotation.y=Math.atan2(dx,dz);
+    player.position.y+=Math.sin(clock*2.4)*.12+.12;dogsW.forEach(d=>d.jump=Math.max(d.jump,Math.sin(clock*3)>.95?1:0));}
+  else{const B=balloonG,t=r.t,e=x=>x*x*(3-2*x);let y,ox=0,oz=0;
+    if(t<7)y=e(t/7)*30;else if(t<23){const v=(t-7)/16;y=30+Math.sin(v*Math.PI)*6;ox=Math.sin(v*Math.PI*2)*20;oz=-20*(1-Math.cos(v*Math.PI*2));}else y=(1-e(Math.min(1,(t-23)/7)))*30;
+    B.b.position.set(ox,y,oz);B.flame.visible=t<8||Math.sin(clock*9)>0;B.flame.scale.setScalar(.8+Math.random()*.4);
+    P.set(B.g.position.x+ox-.4,y+.15,B.g.position.z+oz);player.rotation.y=Math.PI;
+    dogsW.forEach((d,i)=>{if(i<2)d.g.position.set(P.x+.85,y+.15,P.z+(i?.55:-.55));d.g.rotation.y=Math.PI;});}
+  if(r.t>=r.T)rideEnd();}
+function rideEnd(quiet){const r=ride;if(!r)return;ride=null;const P=player.position;P.y=0;
+  if(r.k==='carousel'&&carou){const c=carou.g.position,dx=P.x-c.x,dz=P.z-c.z,d=Math.hypot(dx,dz)||1;P.x=c.x+dx/d*6.6;P.z=c.z+dz/d*6.6;}
+  else if(balloonG){balloonG.b.position.set(0,0,0);P.x=balloonG.g.position.x;P.z=balloonG.g.position.z+4.6;player.rotation.y=0;}
+  collide(P,.45);dogsW.forEach((d,i)=>{d.g.visible=true;d.g.position.set(P.x+(i%2?1.3:-1.3),0,P.z+1.4+i*.6);});
+  if(!quiet){toast(r.k==='balloon'?'What a view! You landed safely.':'That was fun! Ride again any time.');dogsW.forEach(d=>{addJoy(S.dogs[d.idx],10);d.jump=1;});refreshHUD();}}
+function openWish(far){const w=curWish(),done=wishDone(),N=WISHES.length;
+  const list=WISHES.map(x=>{const ok=wishOk(x),now=x===w;return`<div class="stk ${ok?'on':''}"><span class="ic" aria-hidden="true">${x.ic}</span><b>${x.name}</b><small>${ok?'Done!':now?`${wishHave(x)} of ${x.cost}`:`${x.cost} coins`}</small></div>`;}).join('');
+  const back=`data-act="${far?'pause':'close'}"`;
+  if(!w)return openSheet(`<div class="tag">Town Wish Jar · ${N} of ${N} wishes</div><h2>Every wish came true!</h2><p>The whole town thanks you. Keep collecting paw coins for ice cream, new outfits and furniture.</p><div class="stickers">${list}</div><div class="row"><button class="btn" ${back}>${far?'Back':'Yay!'}</button></div>`);
+  const have=wishHave(w),need=w.cost-have,all=Math.min(S.coins,need),b=(n,l)=>`<button class="btn" data-act="wishGive" data-arg="${n}" ${n>0&&S.coins>=n?'':'disabled'}>${l}</button>`;
+  openSheet(`<div class="tag">Town Wish Jar · ${done} of ${N} wishes</div><h2>${w.ic} ${w.name}</h2>
+    <div class="card"><p>${w.desc}</p><div class="meter" role="img" aria-label="${have} of ${w.cost} paw coins"><i style="width:${have/w.cost*100}%"></i></div><p><b>${have} of ${w.cost} paw coins</b> · ${need} to go</p></div>
+    ${far?'<p>Walk to the Wish Jar by the fountain to put coins in.</p>':`<p>Every paw coin in the jar helps build it. You have <b>${S.coins}</b> paw coins.</p>
+    <div class="row">${need>10?b(10,'Put in 10'):''}${need>50?b(50,'Put in 50'):''}${b(all,all>=need?`Put in ${need} and finish it!`:all?`Put in all ${all}`:'Put in coins')}</div>`}
+    <div class="stickers">${list}</div><div class="row"><button class="btn alt" ${back}>${far?'Back':'Later'}</button></div>`);}
+function openIce(){const can=S.coins>=ICE_COST;
+  openSheet(`<div class="tag">Scoop's Ice Cream Cart</div><h2>Ice cream!</h2><p>${dogsW.length?'Share a cone with the ESSAs walking with you. It fills up their hearts!':'Bring your ESSAs along to share a cone with them.'}</p><div class="price">${ICE_COST} paw coins</div>
+    <div class="row">${ICE.map((f,i)=>`<button class="btn" data-act="iceBuy" data-arg="${i}" ${can?'':'disabled'}>${f[0]} ${f[1]}</button>`).join('')}<button class="btn alt" data-act="close">No thanks</button></div>${can?'':`<p>You need ${ICE_COST-S.coins} more paw coins.</p>`}`);}
+function openStatue(){const pick=S.dogs[S.town.pick]?S.town.pick:0;
+  openSheet(`<div class="tag">Golden Pup Statue</div><h2>Who should the statue be?</h2><p>Pick any ESSA from your toy box. You can change it any time.</p>
+    <div class="chips">${S.dogs.map((d,i)=>`<button class="chip2 ${i===pick?'on':''}" data-act="statuePick" data-arg="${i}">${esc(d.name)}</button>`).join('')||'<p>Bring home an ESSA first!</p>'}</div>
+    <div class="row"><button class="btn" data-act="close">Done</button></div>`);}
+const TOWN_ACTS={
+  wishGive:n=>{const w=curWish();if(!w)return;n=Math.min(+n,S.coins,w.cost-wishHave(w));if(!(n>0))return;S.coins-=n;S.town[w.id]=wishHave(w)+n;coinSnd();setTimeout(coinSnd,110);
+    refreshTown();save();refreshHUD();if(!wishOk(w))return keepScroll(()=>openWish());
+    jingle();setTimeout(jingle,450);const at=w.x==null?new THREE.Vector3(0,3,18):new THREE.Vector3(w.x,3,w.z);burst(at,90);burst(player.position.clone().setY(2),60);
+    if(w.id==='statue')return openSheet(`<div class="tag">Wish come true!</div><h2>${w.ic} ${w.name}</h2><p>${w.done}</p><div class="row"><button class="btn" data-act="statue">Pick an ESSA</button></div>`);
+    const nx=curWish();openSheet(`<div class="tag">Wish come true!</div><h2>${w.ic} ${w.name}</h2><p>${w.done}</p>${nx?`<p>The next town wish is the <b>${nx.name}</b> for ${nx.cost} paw coins.</p>`:''}<div class="row"><button class="btn" data-act="close">Hooray!</button></div>`);},
+  iceBuy:i=>{if(S.coins<ICE_COST)return;const f=ICE[+i]||ICE[0];S.coins-=ICE_COST;S.st.ice++;closeSheet();coinSnd();jingle();floatText(f[0],player.position);
+    dogsW.forEach(d=>{addJoy(S.dogs[d.idx],25);hearts(d.g.position.clone().setY(2));d.jump=1;});
+    toast(dogsW.length?`Yum! ${f[1]} ice cream for everyone. ${dogsW.length===1?dogsW[0].name+' is':'Your ESSAs are'} so happy!`:`Yum! A ${f[1].toLowerCase()} cone just for you.`);save();refreshHUD();},
+  statue:()=>openStatue(),statuePick:i=>{S.town.pick=+i;statueDog();save();keepScroll(openStatue);},
+  wishes:()=>openWish(true)};
+
 /* ---------- Paw Park games ---------- */
 // Ranger Rae runs three games in the park on Meadow Ln: an agility course, hide and seek with your ESSAs, and balloon pop.
 const PARK={x:75,z:104,x0:59,x1:91,z0:87,z1:122,gx:66};
@@ -1754,7 +1898,7 @@ function openPark(){const best={agility:S.st.agBest?`Best: ${S.st.agBest.toFixed
       ${G.dog&&!out?`<p class="keys">Bring an ESSA along from your toy box to play.</p>`:`<div class="row"><button class="btn" data-act="pgStart" data-arg="${k}">Play</button></div>`}</div>`).join('')}
     <div class="row"><button class="btn alt" data-act="close">Maybe later</button></div>`);}
 function pgShow(t){$('pgT').textContent=t;}
-function pgStart(k){const G=PGAMES[k];if(!G||driving||photo)return;if(G.dog&&!dogsW.length)return openPark();closeSheet();if(PG)pgEnd('quiet');ballReset();dogsW.forEach(d=>{d.sniff=null;});
+function pgStart(k){const G=PGAMES[k];if(!G||driving||photo||ride)return;if(G.dog&&!dogsW.length)return openPark();closeSheet();if(PG)pgEnd('quiet');ballReset();dogsW.forEach(d=>{d.sniff=null;});
   PG={k,t:G.time,n:0,cd:3.4,cs:0,sp:0,found:0,hid:0,coins:0};document.body.classList.add('pg');$('pgBar').hidden=false;
   if(k==='agility'){HOOPS.forEach(h=>{h.m.color.set(0xffffff);h.m.emissive.set(0);h.n.visible=true;});hoopNext();}
   if(k==='hide'){const sp=BUSHES.slice().sort(()=>Math.random()-.5);dogsW.forEach((d,i)=>{const b=sp[i];d.hide={x:b.hx,z:b.hz};d.g.position.set(b.hx,0,b.hz);d.g.rotation.y=Math.random()*6;d.leash.forEach(m=>m.visible=false);});
@@ -1838,7 +1982,12 @@ const STICKERS=[
   {id:'park',ic:'🏞️',name:'Park day',hint:'Play all 3 games at Paw Park',c:20,ok:()=>S.st.pk===7,pr:()=>[[1,2,4].filter(b=>S.st.pk&b).length,3]},
   {id:'agility',ic:'🏁',name:'Agility ace',hint:'Finish the agility course in time',c:20,ok:()=>S.st.agBest>0},
   {id:'pop20',ic:'🎈',name:'Pop star',hint:'Pop 20 balloons in one game',c:25,ok:()=>S.st.popBest>=20,pr:()=>[S.st.popBest,20]},
-  {id:'seek',ic:'🙈',name:'Found you!',hint:'Find every ESSA in hide and seek',c:20,ok:()=>S.st.hideAll>0}
+  {id:'seek',ic:'🙈',name:'Found you!',hint:'Find every ESSA in hide and seek',c:20,ok:()=>S.st.hideAll>0},
+  {id:'wish1',ic:'🌠',name:'Wish come true',hint:'Fill a town wish at the Wish Jar',c:20,ok:()=>wishDone()>=1},
+  {id:'wishAll',ic:'🏰',name:'Dream town',hint:'Make every town wish come true',c:50,ok:()=>wishDone()>=WISHES.length,pr:()=>[wishDone(),WISHES.length]},
+  {id:'ice',ic:'🍦',name:'Brain freeze',hint:'Share an ice cream with your ESSAs',c:10,ok:()=>S.st.ice>0},
+  {id:'spin',ic:'🎠',name:'Round and round',hint:'Ride the Puppy-Go-Round',c:10,ok:()=>S.st.spin>0},
+  {id:'sky',ic:'🎈',name:'Up, up and away',hint:'Fly in the Hot Air Balloon',c:10,ok:()=>S.st.sky>0}
 ];
 const stkQ=[];let stkBusy=false;
 // award new stickers; quiet (on loading an old save) sums up a big batch in one message instead of a long line of pop-ups
@@ -1878,6 +2027,7 @@ function refreshHUD(){checkStickers();$('coinN').textContent=S.coins;let t;
   const step=t=>{const p=minPrice(t),nm=STORES[storeOfTier(t)].name;return S.coins>=p?`You have enough coins! Pick an ESSA at ${nm}${nm.endsWith('.')?'':'.'}`:`Collect paw coins for an ESSA at ${nm} (${S.coins}/${p}).`;};
   if(!hasTier(1))t=step(1);else if(!hasTier(2))t=step(2);else if(!hasTier(3))t=step(3);
   else if(S.q.show.s!=='done')t=showReqs().every(x=>x[0])?'Your pup is ready! Talk to the judge outside Le Chien.':'Help the neighbors to win a cape, a flower crown and a rainbow leash, then enter the Plush Show.';
+  else if(S.home.own&&curWish()){const w=curWish();t=`Town wish: ${w.name}! Put paw coins in the Wish Jar by the fountain (${wishHave(w)}/${w.cost}).`;}
   else t=S.home.own?(S.stk.length<STICKERS.length?`Best in Show! Fill your sticker book (${S.stk.length} of ${STICKERS.length}) and decorate your Dream Home.`:'You got every sticker! You are a Puppy Quest superstar.'):`Best in Show! Save ${HOME.price} paw coins for the Dream Home on Meadow Ln (the heart on your map).`;
   $('goalT').textContent=t;
   const act=Object.keys(Q).filter(k=>S.q[k].s==='active').map(k=>`${Q[k].who}: ${qCount(k)}/${Q[k].need} ${Q[k].item}`);
@@ -1954,6 +2104,7 @@ function intro(){openSheet(`<div class="tag">How to play</div><h2>Puppy Quest</h
   <p class="keys">Walk with the left joystick. Turn the camera with the purple eye joystick, or drag on the town. On a keyboard use WASD to walk and Q/E to turn. Tap the yellow button to shop, talk and hug your ESSA.</p>
   <p class="keys">Tap the pink ball button to play fetch (or press T). When your ESSA sniffs out a sparkly patch, walk over and tap Dig for buried treasure. There are 5 secret treasures to find!</p>
   <p class="keys">Earn stickers for hugs, fetch, digging, helping neighbors and more. Each sticker gives paw coins. Find your sticker book in the pause menu.</p>
+  <p class="keys">Save up paw coins in the Wish Jar by the fountain. Every town wish you fill builds something new: a rainbow fountain, an ice cream cart, a merry-go-round, a hot air balloon and a golden statue of your ESSA.</p>
   <p class="keys">Fetch &amp; Fancy sells accessories. Tap Dress up in the toy box to change what each ESSA wears, and use My look in the pause menu to change your character.</p>
   <p class="keys">Every store has its own ESSAs. Use the arrows to look at each one before you buy. Your ESSAs live in the toy box, where you pick who comes along.</p>
   <p class="keys">Save up for the Dream Home on Meadow Ln (the heart on the map). Inside, buy furniture from the catalog by the door, tap Move to carry furniture to a new spot, and pick your wallpaper and floor.</p>
@@ -1975,7 +2126,7 @@ function slotList(purpose){let h=`<h2>${purpose==='new'?'Pick a save slot':'Load
 function refreshTitle(){const last=store.get(LASTKEY),x=last&&summary(last),any=[1,2,3].some(i=>readSlot(i));
   $('tCont').hidden=!x;$('tLoad').hidden=!any;$('tInfo').innerHTML=x?`Slot ${last}: ${x.line}`:'';
   document.body.classList.toggle('lefty',!!SET.lefty);}
-function startGame(i,state){exitPhoto();pgEnd('quiet');if(driving)exitCar(true);if(inHome)exitHome(true);slot=i;S=migrate(state);refreshHome();buildPlayer(S.look);camYaw=0;camPitch=.75;
+function startGame(i,state){exitPhoto();pgEnd('quiet');if(driving)exitCar(true);if(inHome)exitHome(true);slot=i;S=migrate(state);refreshHome();refreshTown();buildPlayer(S.look);camYaw=0;camPitch=.75;
   for(const it of items.slice())if(it.kind!=='coin'){removeItem(it);items.splice(items.indexOf(it),1);}
   for(const id of Object.keys(Q))if(S.q[id].s==='active')spawnQuestItems(id);
   applySeason();spawnSeaHunt();
@@ -1985,7 +2136,7 @@ function startGame(i,state){exitPhoto();pgEnd('quiet');if(driving)exitCar(true);
   toast(S.dogs.length?`Welcome back! ${S.dogs[0].name} missed you.`:'Find gold paw coins to buy your first ESSA!');
   if(seaN()<8)setTimeout(()=>{if(mode==='play'&&wrap.hidden){const z=SEASONS[season()];toast(`${z.ic} It's ${z.name.toLowerCase()}! Find 8 ${z.items} hidden around town for a special prize.`);}},9000);
   if(!S.home.own&&S.dogs.length)setTimeout(()=>{if(mode==='play'&&!S.home.own&&wrap.hidden)toast('Psst! A Dream Home is for sale on Meadow Ln. Look for the heart on your map.');},5000);}
-function goTitle(){exitPhoto();pgEnd('quiet');save();mode='title';closeSheet();document.body.classList.add('in-title');$('title').hidden=false;refreshTitle();}
+function goTitle(){exitPhoto();pgEnd('quiet');rideEnd(true);save();mode='title';closeSheet();document.body.classList.add('in-title');$('title').hidden=false;refreshTitle();}
 const onOff=v=>v?'On':'Off';
 const ACTS={
   close:closeSheet,
@@ -2019,7 +2170,7 @@ const ACTS={
     jingle();setTimeout(jingle,500);burst(player.position.clone().setY(2),120);if(d){hearts(d.g.position.clone().setY(2));d.jump=1;}
     openSheet(`<div class="tag">The Grand Plush Show</div><h2>Best in Show!</h2><p>${esc(d?d.name:'Your pup')} won first prize and a golden crown! You also won 100 paw coins.</p><p>Keep playing to fill your sticker book, dig up secret treasures and decorate your Dream Home!</p><div class="row"><button class="btn" data-act="close">Woohoo!</button></div>`);refreshHUD();},
   pause:()=>openSheet(`<div class="tag">Slot ${slot}</div><h2>Paused</h2>
-    <div class="tmenu" style="max-width:none"><button class="btn" data-act="close">Resume</button><button class="btn alt" data-act="saveNow">Save game</button><button class="btn alt" data-act="stickers">Sticker book · ${S.stk.length} of ${STICKERS.length}</button>${S.home.own&&!inHome?'<button class="btn alt" data-act="goHome">Go to my house</button>':''}${inHome&&S.dogs.length?'<button class="btn alt" data-act="bedtime">Bedtime for my ESSAs</button>':''}
+    <div class="tmenu" style="max-width:none"><button class="btn" data-act="close">Resume</button><button class="btn alt" data-act="saveNow">Save game</button><button class="btn alt" data-act="stickers">Sticker book · ${S.stk.length} of ${STICKERS.length}</button><button class="btn alt" data-act="wishes">Town wishes · ${wishDone()} of ${WISHES.length}</button>${S.home.own&&!inHome?'<button class="btn alt" data-act="goHome">Go to my house</button>':''}${inHome&&S.dogs.length?'<button class="btn alt" data-act="bedtime">Bedtime for my ESSAs</button>':''}
     <div class="row"><button class="btn alt" data-act="box">Toy box</button><button class="btn alt" data-act="look">My look</button><button class="btn alt" data-act="settings">Settings</button><button class="btn alt" data-act="help">How to play</button></div>
     <button class="btn warn" data-act="quit">Save and quit to title</button></div>`),
   saveNow:()=>{const ok=save();closeSheet();toast(ok?`Game saved in slot ${slot}`:'Could not save. This browser is blocking saved games.');if(ok)tone(784,.12,'triangle',.08);},
@@ -2055,7 +2206,7 @@ const ACTS={
     <div class="row"><button class="btn warn" data-act="delYes" data-arg="${i}">Yes, delete</button><button class="btn alt" data-act="loadGame">Back</button></div>`);},
   delYes:i=>{store.del(slotKey(i));if(store.get(LASTKEY)==i)store.del(LASTKEY);refreshTitle();[1,2,3].some(k=>readSlot(k))?ACTS.loadGame():closeSheet();}
 };
-Object.assign(ACTS,HOME_ACTS,TS_ACTS,CARE_ACTS,PHOTO_ACTS,PG_ACTS);
+Object.assign(ACTS,HOME_ACTS,TS_ACTS,CARE_ACTS,PHOTO_ACTS,PG_ACTS,TOWN_ACTS);
 sheet.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled){audio();ACTS[b.dataset.act](b.dataset.arg);}});
 $('menuBtn').addEventListener('click',()=>{audio();ACTS.pause();});
 $('camBtn').addEventListener('click',enterPhoto);
@@ -2115,7 +2266,8 @@ function goalTarget(){
   if(PG&&PG.k==='agility'&&PG.cd<=0&&HOOPS[PG.n])return HOOPS[PG.n];
   for(const t of[1,2,3])if(!hasTier(t))return S.coins>=minPrice(t)?spots[t-1]:null;
   for(const id in Q)if(S.q[id].s==='active'&&qCount(id)>=Q[id].need)return npcs[id];
-  if(S.q.show.s!=='done'&&showReqs().every(x=>x[0]))return npcs.judge;return null;}const camPos=new THREE.Vector3(),look=new THREE.Vector3();
+  if(S.q.show.s!=='done'&&showReqs().every(x=>x[0]))return npcs.judge;
+  const w=curWish();if(w&&S.home.own&&S.q.show.s==='done'&&S.coins>=w.cost-wishHave(w))return JAR;return null;}const camPos=new THREE.Vector3(),look=new THREE.Vector3();
 function petDog(d){addJoy(S.dogs[d.idx],4);bark();hearts(d.g.position.clone().setY(2));d.jump=1;toast(`${d.name} gives the best hugs!`);S.st.hug++;refreshHUD();}
 function update(dt){clock+=dt;
   let mx=0,mz=0;
@@ -2127,7 +2279,7 @@ function update(dt){clock+=dt;
   {const c=Math.cos(camYaw),s=Math.sin(camYaw),rx=mx*c+mz*s,rz=-mx*s+mz*c;mx=rx;mz=rz;}
   const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml;}const spd=Math.min(1,ml)*8;
   const P=player.position;
-  if(driving)driveUpdate(dt,mx,mz);else{
+  if(driving)driveUpdate(dt,mx,mz);else if(ride)rideUpdate(dt);else{
   if(ml>.05){P.x+=mx*8*dt;P.z+=mz*8*dt;collide(P,.45);const a=Math.atan2(mx,mz);let da=a-player.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));player.rotation.y+=da*Math.min(1,dt*12);}
   player.userData.ph=(player.userData.ph||0)+spd*dt*1.6;const sw=Math.sin(player.userData.ph)*Math.min(1,spd/4)*.7;
   player.userData.legs[0].rotation.x=sw;player.userData.legs[1].rotation.x=-sw;player.userData.arms[0].rotation.x=-sw;player.userData.arms[1].rotation.x=GEAR[S.leash]&&dogsW.length?-.5:sw;
@@ -2137,7 +2289,7 @@ function update(dt){clock+=dt;
   // dogs follow in a line; a dog fetching the ball or sniffing treasure leaves the line for a bit
   ballUpdate(dt);if(mode==='play'){digUpdate(dt,P);pgUpdate(dt,P);}
   let lx=P.x,lz=P.z;
-  if(!driving)dogsW.forEach((d,i)=>{const p=d.g.position;let v=0;const busy=d.fetching||d.sniff||d.hide||photo;
+  if(!driving&&!ride)dogsW.forEach((d,i)=>{const p=d.g.position;let v=0;const busy=d.fetching||d.sniff||d.hide||photo;
     if(d.fetching)v=fetchMove(d,dt);else if(d.sniff)v=sniffMove(d,dt);else if(d.hide){if(PG&&PG.cd<=0)d.g.rotation.y+=Math.sin(clock*.8+i)*dt*.3;}
     else if(photo){const s=photoSlot(i,P,player.rotation.y),dx=s.x-p.x,dz=s.z-p.z,dist=Math.hypot(dx,dz);if(dist>.15){v=Math.min(9,dist*5);p.x+=dx/dist*Math.min(dist,v*dt);p.z+=dz/dist*Math.min(dist,v*dt);turnTo(d.g,dx,dz,dt*8);}
       else{turnTo(d.g,camera.position.x-p.x,camera.position.z-p.z,dt*6);if(POSES[photo.pose][0]==='dance')d.g.rotation.y+=Math.sin(clock*4+i)*dt*2;}}
@@ -2152,13 +2304,13 @@ function update(dt){clock+=dt;
     d.head.rotation.x=d.sniff&&d.spd<1?.42+Math.sin(clock*13)*.1:Math.sin(clock*1.3+i)*.06;
     if(d.acc&&d.acc.userData.cape)d.acc.userData.cape.rotation.x=Math.min(.45,d.spd*.07)+Math.sin(clock*9+i)*.05*Math.min(1,d.spd/3);
     if(!busy){lx=p.x;lz=p.z;}});
-  player.updateMatrixWorld(true);dogsW.forEach(d=>{d.g.updateMatrixWorld(true);if(driving)return;if(d.fetching||d.sniff||d.hide||photo)d.leash.forEach(m=>m.visible=false);else updateLeash(d);});
+  player.updateMatrixWorld(true);dogsW.forEach(d=>{d.g.updateMatrixWorld(true);if(driving||ride)return;if(d.fetching||d.sniff||d.hide||photo)d.leash.forEach(m=>m.visible=false);else updateLeash(d);});
   // camera + sun
   const portrait=camera.aspect<1;
   if(mode==='title'){const a=clock*.06;camera.position.set(Math.sin(a)*48,portrait?34:24,Math.cos(a)*48);camera.lookAt(0,0,-6);}
-  else{if(inHome)camPitch=Math.max(.6,camPitch);if(photo)camPitch=Math.min(camPitch,.9);const D=inHome?(portrait?17:13.5)*camZoom:(portrait?25:20)*camZoom*(driving?1.15:1),h=Math.cos(camPitch)*D;camPos.set(P.x+Math.sin(camYaw)*h,Math.sin(camPitch)*D,P.z+Math.cos(camYaw)*h);
-    if(!inHome)camPos.copy(camClear(P,camPos));const ah=driving?Math.min(3.5,Math.max(0,driving.v)*.15):0;
-    camera.position.lerp(camPos,Math.min(1,dt*(driving?4.5:6)));look.lerp(tmpA.set(P.x+Math.sin(player.rotation.y)*ah,1,P.z+Math.cos(player.rotation.y)*ah),Math.min(1,dt*8));camera.lookAt(look);}
+  else{if(inHome)camPitch=Math.max(.6,camPitch);if(photo)camPitch=Math.min(camPitch,.9);const D=inHome?(portrait?17:13.5)*camZoom:(portrait?25:20)*camZoom*(driving?1.15:ride&&ride.k==='balloon'?1.35:1),h=Math.cos(camPitch)*D;camPos.set(P.x+Math.sin(camYaw)*h,Math.sin(camPitch)*D+P.y,P.z+Math.cos(camYaw)*h);
+    if(!inHome&&P.y<1)camPos.copy(camClear(P,camPos));const ah=driving?Math.min(3.5,Math.max(0,driving.v)*.15):0;
+    camera.position.lerp(camPos,Math.min(1,dt*(driving?4.5:6)));look.lerp(tmpA.set(P.x+Math.sin(player.rotation.y)*ah,1+P.y,P.z+Math.cos(player.rotation.y)*ah),Math.min(1,dt*8));camera.lookAt(look);}
   sunL.position.set(P.x+20,40,P.z+15);sunL.target.position.set(P.x,0,P.z);
   // items
   for(const it of items){
@@ -2169,17 +2321,17 @@ function update(dt){clock+=dt;
   // NPC markers bob, npcs look at player
   for(const id in npcs){const n=npcs[id];n.mk.position.y=(id==='judge'?3.3:3.2)+Math.sin(clock*4)*.15;
     if((P.x-n.x)**2+(P.z-n.z)**2<64){const a=Math.atan2(P.x-n.x,P.z-n.z);let da=a-n.g.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));n.g.rotation.y+=da*Math.min(1,dt*4);}}
-  {const tg=goalTarget();const dx=tg?tg.x-P.x:0,dz=tg?tg.z-P.z:0,dd=Math.hypot(dx,dz);arrow.visible=!!tg&&dd>(PG?2.5:5)&&!paused&&!inHome&&!photo;
+  {const tg=goalTarget();const dx=tg?tg.x-P.x:0,dz=tg?tg.z-P.z:0,dd=Math.hypot(dx,dz);arrow.visible=!!tg&&dd>(PG?2.5:5)&&!paused&&!inHome&&!photo&&!ride;
    if(arrow.visible){arrow.position.set(P.x+dx/dd*1.8,.08,P.z+dz/dd*1.8);arrow.rotation.y=Math.atan2(dx,dz)+Math.PI;arrow.material.opacity=.65+Math.sin(clock*6)*.3;}}
   dayUpdate(dt);if(mode==='play'&&!S.st.hills&&P.z<-78&&P.z>-200){S.st.hills=1;toast('Welcome to Sunny Hills! Visit Ms. Twinkle for the Trick Show.');refreshHUD();}
   if(clouds)clouds.rotation.y+=dt*.006;water.position.y=.68+Math.sin(clock*2)*.02;spout.scale.setScalar(1+Math.sin(clock*5)*.12);
-  updateFx(dt);seaFxUpdate(dt);if(inHome)homeUpdate(dt);
+  updateFx(dt);seaFxUpdate(dt);townUpdate(dt);if(inHome)homeUpdate(dt);
   cullT-=dt;if(cullT<=0){cullT=.25;const C=camera.position;for(const f of farCull)f.o.visible=(C.x-f.x)**2+(C.z-f.z)**2<f.r2;}
   updateAmb(dt,P);if(pondWater)pondWater.position.y=.05+Math.sin(clock*1.5)*.01;
   miniT-=dt;if(miniT<=0&&mode==='play'){miniT=.15;miniDraw();}
   // nearest action
   let best=null,bd=1e9;
-  if(photo){}else if(!paused&&driving)best={label:'Hop out',fn:()=>exitCar()};else if(!paused&&inHome){best=homeAction(P);if(!best)for(const d of dogsW.concat(homeDogs)){const dd=Math.hypot(P.x-d.g.position.x,P.z-d.g.position.z);if(dd<2.8&&dd<bd){bd=dd;best={label:'Hug',fn:()=>petDog(d)};}}}
+  if(photo||ride){}else if(!paused&&driving)best={label:'Hop out',fn:()=>exitCar()};else if(!paused&&inHome){best=homeAction(P);if(!best)for(const d of dogsW.concat(homeDogs)){const dd=Math.hypot(P.x-d.g.position.x,P.z-d.g.position.z);if(dd<2.8&&dd<bd){bd=dd;best={label:'Hug',fn:()=>petDog(d)};}}}
   else if(!paused){for(const s of spots){const d=Math.hypot(P.x-s.x,P.z-s.z);if(d<s.r&&d<bd){bd=d;best=s;}}
     if(!best)for(const s of digs)if(s.on&&s.found&&(P.x-s.x)**2+(P.z-s.z)**2<5.5){best={label:'Dig',fn:()=>digAt(s)};break;}
     if(!best&&!PG)for(const c of cars){if(Math.hypot(P.x-c.g.position.x,P.z-c.g.position.z)<3.4){best={label:'Drive',fn:()=>enterCar(c)};break;}}
@@ -2218,6 +2370,7 @@ function miniDraw(){if(!miniBase)miniBuild();mctx.drawImage(miniBase,0,0);const 
   for(const c of cars){if(c===driving)continue;mctx.fillStyle='#fff';mctx.fillRect(mx_(c.g.position.x)-2.5,mz_(c.g.position.z)-2.5,5,5);}
   {const hx=mx_(HOME.x),hz=mz_(HOME.z);mctx.fillStyle=S.home.own?'#ff5d8f':'#ffffff';mctx.strokeStyle='#ff5d8f';mctx.lineWidth=1.5;mctx.beginPath();mctx.moveTo(hx,hz+5);mctx.bezierCurveTo(hx+8,hz-1,hx+4,hz-7,hx,hz-3);mctx.bezierCurveTo(hx-4,hz-7,hx-8,hz-1,hx,hz+5);mctx.fill();mctx.stroke();}
   for(const it of items)if(it.on&&it.kind!=='coin'&&!it.done){mctx.fillStyle=it.kind==='flag'||it.kind==='mail'?'#ffc53d':'#ff5d8f';mctx.beginPath();mctx.arc(mx_(it.x),mz_(it.z),3,0,7);mctx.fill();}
+  if(curWish()){const jx=mx_(JAR.x),jz=mz_(JAR.z);mctx.fillStyle='#ffc53d';mctx.strokeStyle='#7b4fd6';mctx.lineWidth=1.5;mctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,r=i%2?2.6:6;mctx.lineTo(jx+Math.cos(a)*r,jz+Math.sin(a)*r);}mctx.closePath();mctx.fill();mctx.stroke();}
   mctx.fillStyle='#8a5a3c';for(const s of digs)if(s.on&&s.found){mctx.beginPath();mctx.arc(mx_(s.x),mz_(s.z),3,0,7);mctx.fill();}
   for(const id in npcs){const n=npcs[id];if(n.mk.visible){mctx.fillStyle='#ffc53d';mctx.strokeStyle='#2a2140';mctx.lineWidth=1.5;mctx.beginPath();mctx.arc(mx_(n.x),mz_(n.z),4.5,0,7);mctx.fill();mctx.stroke();}}
   const tg=goalTarget();if(tg){mctx.strokeStyle='#ff5d8f';mctx.lineWidth=2.5;mctx.beginPath();mctx.arc(mx_(tg.x),mz_(tg.z),7+Math.sin(clock*6)*1.5,0,7);mctx.stroke();}
