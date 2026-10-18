@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ splash: a plain colour background here, and the system adds the launcher icon on top. -->
+    <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/splash</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>
