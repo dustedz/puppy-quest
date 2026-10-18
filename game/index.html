@@ -131,6 +131,40 @@ input[type=text]:focus{outline:none;border-color:var(--grape)}
   .sheet.shop .pvbox{grid-column:1;grid-row:3/span 3;max-height:none}.sheet.shop.gear .pvbox{grid-row:4/span 3}.sheet.dress{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);align-items:start}.sheet.dress>*{grid-column:2}.sheet.dress .pvbox{grid-column:1;grid-row:1/span 9;max-height:none;position:sticky;top:0}.sheet.shop .card p{font-size:14px;line-height:1.35}.sheet.shop .card{padding:10px 12px}.sheet.shop .card,.sheet.shop>p,.sheet.shop>.row{grid-column:2}
   .logo h1{font-size:clamp(48px,17vh,96px)}.tmenu{gap:8px}.tmenu .btn{font-size:18px;padding:10px 16px}
 }
+/* fetch ball button, sticker pop-up and sticker book */
+#ballBtn{position:fixed;right:calc(126px + env(safe-area-inset-right,0px));bottom:calc(166px + env(safe-area-inset-bottom,0px));width:64px;height:64px;border-radius:50%;border:0;padding:0;
+  background:var(--paper);box-shadow:0 4px 0 var(--shade);display:grid;place-items:center;cursor:pointer;animation:pop .25s ease-out}
+#ballBtn svg{width:40px;height:40px}
+#ballBtn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--shade)}
+.lefty #ballBtn{right:auto;left:calc(126px + env(safe-area-inset-left,0px))}
+.in-title #ballBtn{display:none!important}
+#stkPop{position:fixed;z-index:5;left:50%;top:calc(env(safe-area-inset-top,0px) + 150px);transform:translateX(-50%);background:var(--paper);border:3px solid var(--sun);border-radius:20px;
+  padding:8px 16px 8px 8px;display:flex;align-items:center;gap:10px;box-shadow:0 5px 0 var(--shade);pointer-events:none;transition:opacity .3s,transform .3s;max-width:calc(100% - 32px);box-sizing:border-box}
+#stkPop.off{opacity:0;transform:translate(-50%,-10px) scale(.9)}
+#stkPop .ic{font-size:30px;width:48px;height:48px;flex:none;display:grid;place-items:center;background:#fff4d1;border-radius:50%}
+#stkPop b{display:block;font-family:var(--display);font-weight:400;font-size:18px;color:var(--grape)}
+#stkPop small{font-weight:800;color:#b7791f}
+.stickers{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.stk{border:3px solid var(--lilac);border-radius:16px;padding:8px 6px;text-align:center;display:grid;gap:3px;justify-items:center;align-content:start}
+.stk .ic{font-size:32px;line-height:1.15}
+.stk b{font-family:var(--display);font-weight:400;font-size:14px;line-height:1.1}
+.stk small{font-size:11px;color:#6a5f80;font-weight:800;line-height:1.25}
+.stk.on{border-color:var(--sun);background:#fffbe9}
+.stk:not(.on) .ic{filter:grayscale(1);opacity:.35}
+.meter{height:12px;border-radius:999px;background:var(--lilac);overflow:hidden}.meter i{display:block;height:100%;background:var(--sun);border-radius:999px}
+/* trick show buttons */
+.trks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.trk{font-family:var(--display);font-size:19px;border:0;border-radius:16px;padding:12px 8px;background:var(--lilac);color:var(--ink);box-shadow:0 4px 0 #cbbde3;cursor:pointer;transition:transform .12s,background .12s}
+.trk:disabled{cursor:default}
+.trk.lit{background:var(--sun);box-shadow:0 4px 0 #d99a10;transform:scale(1.06)}
+.trk.bad{background:var(--berry);color:#fff}
+#tsMsg{min-height:1.05em}
+@media (max-height:500px){
+  .sheet.shop>.trks{grid-column:2}.trk{padding:8px;font-size:16px}
+  #ballBtn{width:56px;height:56px;bottom:calc(26px + env(safe-area-inset-bottom,0px));right:calc(226px + env(safe-area-inset-right,0px))}
+  .lefty #ballBtn{right:auto;left:calc(226px + env(safe-area-inset-left,0px))}
+  #stkPop{top:calc(env(safe-area-inset-top,0px) + 110px)}
+}
 </style>
 
 <canvas id="game"></canvas>
@@ -143,6 +177,8 @@ input[type=text]:focus{outline:none;border-color:var(--grape)}
 <div id="joy" aria-hidden="true"><div id="knob"></div></div>
 <div id="look" aria-hidden="true"><div class="knob"><svg viewBox="0 0 24 24" fill="none" stroke="#7b4fd6" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M2 12c3-5 7-7 10-7s7 2 10 7c-3 5-7 7-10 7s-7-2-10-7z"/></svg></div></div>
 <button id="act" hidden>Talk</button>
+<button id="ballBtn" hidden aria-label="Throw the ball for fetch"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="#ff5d8f" stroke="#2a2140" stroke-width="2.5"/><path d="M6 15c9 5 19 5 28 0M6 25c9-5 19-5 28 0" fill="none" stroke="#ffe14d" stroke-width="3.2" stroke-linecap="round"/></svg></button>
+<div id="stkPop" class="off" aria-live="polite"></div>
 <canvas id="mini" width="220" height="220" aria-label="Town map. Tap to make it bigger."></canvas>
 <div id="toast" class="off"></div>
 <div id="title" hidden>
@@ -219,9 +255,17 @@ const GEAR={
   rainbow_leash:{slot:'leash',name:'Rainbow Glow Leash',quest:'walk',rainbow:true,glow:true,desc:'A leash that glows in every color of the rainbow.'},
   strawhat:{slot:'head',name:'Straw Sun Hat',quest:'chicks',c:0xe8c56a,kind:'straw',desc:'Farmer Gus\'s best floppy straw hat with a red band.'},
   lifevest:{slot:'body',name:'Splashy Life Vest',quest:'ducks',c:0xff8a2a,kind:'sweater',gloss:true,desc:'A bright orange vest from Captain Mae for pond adventures.'},
+  apron:{slot:'body',name:"Baker's Apron",quest:'cupcakes',c:0xff9ec7,kind:'sweater',desc:'Baker Bea\'s pink apron, dusted with a little bit of sugar.'},
   mailbag:{slot:'body',name:'Mail Pup Bag',quest:'mail',c:0x3b82f6,kind:'bag',desc:'A tiny blue mail bag with a gold letter badge.'},
-  crown:{slot:'head',name:'Golden Crown',quest:'show',kind:'crown',desc:'Only for the winner of the Grand Plush Show.'}
+  crown:{slot:'head',name:'Golden Crown',quest:'show',kind:'crown',desc:'Only for the winner of the Grand Plush Show.'},
+  // secret treasures: only found by digging where an ESSA sniffs
+  pirate:{slot:'head',name:'Pirate Hat',dig:true,c:0x2a2140,kind:'pirate',desc:'Arr! A three-cornered hat from a buried treasure chest.'},
+  goldstar:{slot:'face',name:'Treasure Star Glasses',dig:true,c:0xe8c25a,gloss:true,star:true,desc:'Golden star glasses that were buried under a tree.'},
+  jewel:{slot:'neck',name:'Royal Jewel Collar',dig:true,c:0x7b4fd6,gloss:true,gem:true,desc:'A purple velvet collar with a sparkly jewel. Found by a very good nose!'},
+  sailor:{slot:'neck',name:'Sailor Bandana',dig:true,c:0x3b82f6,kind:'bandana',desc:'A blue bandana that smells a tiny bit like the sea.'},
+  leash_bone:{slot:'leash',name:'Bone White Leash',dig:true,c:0xfff3d6,desc:'A creamy white leash with a little bone charm.'}
 };
+const DIG_GEAR=Object.keys(GEAR).filter(k=>GEAR[k].dig);
 const SLOTS_G=[['neck','Neck'],['body','Body'],['head','Head'],['face','Face'],['leash','Leash']],SLOTNAME=Object.fromEntries(SLOTS_G);
 const PAL={skin:[0xf8d5b8,0xf2c29b,0xd9a37a,0xb07850,0x7a4e2f],hair:[0x5a3418,0x2b1a10,0xe6c068,0xc0502b,0x1b1b1f,0xff7ab8,0x7b4fd6,0x4fb3ff],
   shirt:[0x8a5cf6,0xff5d8f,0x2fbf8f,0xffc53d,0x4fb3ff,0xe23b3b,0xffffff,0x2a2140],pants:[0x2f4fbf,0x2a2140,0xff9ec7,0x6d8b74,0xb48cff,0xe9dcc0],shoes:[0xffffff,0xff5d8f,0x2a2140,0xffc53d,0x2fbf8f]};
@@ -238,13 +282,16 @@ const STORES={
 const SLOTS=3,slotKey=i=>'puppyquest.slot'+i,LASTKEY='puppyquest.last',SETKEY='puppyquest.settings';
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-const SET=Object.assign({sound:true,music:true,lefty:false,track:0,autocam:true},store.get(SETKEY)||{});
+const SET=Object.assign({sound:true,music:true,lefty:false,track:0,autocam:true,daynight:true},store.get(SETKEY)||{});
 const saveSet=()=>store.set(SETKEY,SET);
 function fresh(){return{coins:0,dogs:[],pos:null,savedAt:0,owned:[],leash:null,look:{...LOOK0},
-  q:{bones:{s:'new',n:0},flowers:{s:'new',n:0},walk:{s:'new',f:[0,0,0,0]},show:{s:'new'},chicks:{s:'new',n:0},ducks:{s:'new',n:0},mail:{s:'new',f:[0,0,0,0]}},home:{own:false,wall:0,floor:0,f:{}}};}
+  q:{bones:{s:'new',n:0},flowers:{s:'new',n:0},walk:{s:'new',f:[0,0,0,0]},show:{s:'new'},chicks:{s:'new',n:0},ducks:{s:'new',n:0},mail:{s:'new',f:[0,0,0,0]},cupcakes:{s:'new',n:0}},home:{own:false,wall:0,floor:0,paint:0,f:{}},
+  st:{...ST0},stk:[]};}
+const ST0={hug:0,fetch:0,dig:0,coins:0,drive:0,again:0,shows:0,showBest:0,night:0,hills:0}; // lifetime counts for the sticker book
 const valid=s=>!!(s&&s.q&&Array.isArray(s.dogs));
 const owns=id=>S.owned.includes(id);
-function migrate(s){s.owned=s.owned||[];s.home=Object.assign({own:false,wall:0,floor:0,f:{}},s.home||{});s.home.f=s.home.f||{};const fq=fresh().q;for(const k in fq)if(!s.q[k])s.q[k]=fq[k];s.look=Object.assign({...LOOK0},s.look||{});if(s.leash===undefined)s.leash=null;s.dogs.forEach(d=>d.gear=d.gear||{});
+function migrate(s){s.owned=s.owned||[];s.home=Object.assign({own:false,wall:0,floor:0,paint:0,f:{}},s.home||{});s.home.f=s.home.f||{};const fq=fresh().q;for(const k in fq)if(!s.q[k])s.q[k]=fq[k];s.look=Object.assign({...LOOK0},s.look||{});if(s.leash===undefined)s.leash=null;s.dogs.forEach(d=>d.gear=d.gear||{});
+  s.st=Object.assign({...ST0},s.st||{});s.stk=Array.isArray(s.stk)?s.stk:[];
   const give=(id,slot)=>{if(!s.owned.includes(id))s.owned.push(id);if(slot)s.dogs.forEach(d=>{if(!d.gear[slot])d.gear[slot]=id;});};
   if(s.acc){const A=s.acc;if(A.harness)give('harness_red','body');if(A.collar)give('collar_pink','neck');if(A.crown)give('crown','head');if(A.leash){give('leash_purple');s.leash=s.leash||'leash_purple';}delete s.acc;}
   for(const id of Object.keys(GEAR)){const q=GEAR[id].quest;if(q&&s.q[q]&&s.q[q].s==='done')give(id);}return s;}
@@ -257,6 +304,7 @@ const has=t=>S.dogs.some(d=>d.type===t);
 const hasTier=t=>S.dogs.some(d=>DOGS[d.type]&&DOGS[d.type].tier===t);
 const minPrice=t=>Math.min(...Object.values(DOGS).filter(d=>d.tier===t).map(d=>d.price));
 const storeOfTier=t=>Object.keys(STORES).find(k=>STORES[k].tier===t);
+function earn(n){S.coins+=n;S.st.coins+=n;}
 
 /* ---------- sound ---------- */
 let ac=null;
@@ -320,7 +368,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xbfe6ff);scene.fog=new THREE.Fog(0xbfe6ff,60,120);
 const camera=new THREE.PerspectiveCamera(50,1,.1,300);
-scene.add(new THREE.HemisphereLight(0xffffff,0x7fae5a,.75));
+const hemi=new THREE.HemisphereLight(0xffffff,0x7fae5a,.75);scene.add(hemi);
 const sunL=new THREE.DirectionalLight(0xfff3dc,.85);sunL.castShadow=true;sunL.shadow.mapSize.set(2048,2048);
 Object.assign(sunL.shadow.camera,{left:-30,right:30,top:30,bottom:-30,near:1,far:120});sunL.shadow.bias=-.0005;
 scene.add(sunL,sunL.target);
@@ -368,7 +416,7 @@ function randPos(pad=2,R=WB-4,cx=0,cz=0){for(let i=0;i<300;i++){const x=cx+(Math
 
 /* ---------- bigger town: roads, neighborhoods, pond, farm ---------- */
 const WB=126; // walkable half-size of the town
-const ROADS=[{x0:-130,x1:130,z0:-25.5,z1:-18.5},{x0:-130,x1:130,z0:71.5,z1:78.5},{x0:-63.5,x1:-56.5,z0:-18.5,z1:71.5},{x0:56.5,x1:63.5,z0:-18.5,z1:71.5}];
+const ROADS=[{x0:-122,x1:122,z0:-88.5,z1:-81.5},{x0:26.5,x1:33.5,z0:-81.5,z1:-25.5},{x0:-130,x1:130,z0:-25.5,z1:-18.5},{x0:-130,x1:130,z0:71.5,z1:78.5},{x0:-63.5,x1:-56.5,z0:-18.5,z1:71.5},{x0:56.5,x1:63.5,z0:-18.5,z1:71.5}];
 const onRoad=(x,z,p=0)=>ROADS.some(r=>x>r.x0-p&&x<r.x1+p&&z>r.z0-p&&z<r.z1+p);
 const noTree=[]; // yards, lawns and the farm stay clear of trees and rocks
 const inNoTree=(x,z,p=0)=>noTree.some(r=>x>r.x0-p&&x<r.x1+p&&z>r.z0-p&&z<r.z1+p);
@@ -377,7 +425,11 @@ const POND={x:-95,z:25,r:11},FARM={x:100,z:45};
 const HOUSES=[[-46,0,0xf6b3c8],[-46,24,0x9fd0f5],[46,0,0xb9e6a8],[46,24,0xffd98a],
   [-100,89,0xffd98a,Math.PI],[-70,89,0xb9e6a8,Math.PI],[20,89,0xf6b3c8,Math.PI],[50,89,0x9fd0f5,Math.PI],[100,89,0xffc0a0,Math.PI],
   [-100,62,0xcdb8f5,0],[-40,62,0xffe3a0,0],[25,62,0xa8e0e6,0],
-  [-75,5,0xf6b3c8],[75,5,0xffd98a],[75,30,0xb9e6a8],[-45,-55,0x9fd0f5,0],[45,-55,0xf6b3c8,0]];
+  [-75,5,0xf6b3c8],[75,5,0xffd98a],[75,30,0xb9e6a8],[-45,-55,0x9fd0f5,0],[45,-55,0xf6b3c8,0],
+  // Sunny Hills, along Sunset Rd
+  [-105,-72,0xffc0a0,Math.PI],[-80,-72,0xcdb8f5,Math.PI],[-15,-72,0xb9e6a8,Math.PI],[55,-72,0xffe3a0,Math.PI],[80,-72,0xa8e0e6,Math.PI],[105,-72,0xf6b3c8,Math.PI],
+  [-105,-100,0x9fd0f5,0],[-80,-100,0xffd98a,0],[55,-100,0xcdb8f5,0],[80,-100,0xb9e6a8,0],[105,-100,0xffc0a0,0]];
+const HILLS={z:-85,stage:{x:5,z:-102},bakery:{x:-45,z:-99},play:{x:32,z:-102}};
 const houseRy=h=>h[3]!=null?h[3]:h[0]<0?Math.PI/2:-Math.PI/2;
 const houseFront=(h,f,s=0)=>{const ry=houseRy(h),fx=Math.sin(ry),fz=Math.cos(ry);return{x:h[0]+fx*f+fz*s,z:h[1]+fz*f-fx*s,ry};};
 function flatRect(w,d,c,x,z,y=.02,ry=0){const m=mesh(new THREE.PlaneGeometry(w,d),mat(c),x,y,z,scene,false);m.rotation.set(-Math.PI/2,0,ry);return m;}
@@ -387,10 +439,14 @@ function buildRoads(){
   for(const x of[-60,60]){flatRect(7,90,0x6b6f80,x,26.5,.025);flatRect(2.4,82,0xe9e2d0,x-4.6,26.5);flatRect(2.4,82,0xe9e2d0,x+4.6,26.5);}
   const dash=new THREE.PlaneGeometry(2.4,.3),dm=mat(0xfff6c8),pos=[];
   for(let x=-126;x<=126;x+=6){pos.push([x,-22,0],[x,75,0]);}for(let z=-14;z<=68;z+=6){pos.push([-60,z,1],[60,z,1]);}
+  // Sunset Rd and Hill Rd down to Sunny Hills
+  flatRect(244,7,0x6b6f80,0,-85);flatRect(244,2.5,0xe9e2d0,0,-90.4);flatRect(244,2.5,0xe9e2d0,0,-79.6);
+  flatRect(7,56,0x6b6f80,30,-53.5,.025);flatRect(2.4,50,0xe9e2d0,25.4,-53.5);flatRect(2.4,50,0xe9e2d0,34.6,-53.5);
+  for(let x=-120;x<=120;x+=6)pos.push([x,-85,0]);for(let z=-76;z<=-30;z+=6)pos.push([30,z,1]);
   const im=new THREE.InstancedMesh(dash,dm,pos.length),M=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),one=new THREE.Vector3(1,1,1),v=new THREE.Vector3();
   pos.forEach(([x,z,r],i)=>{e.set(-Math.PI/2,0,r?Math.PI/2:0);q.setFromEuler(e);M.compose(v.set(x,.03,z),q,one);im.setMatrixAt(i,M);});scene.add(im);
   // street signs at the crossings
-  for(const [x,z,t] of[[-64.5,-15.5,'Maple Ave'],[64.5,-15.5,'Oak Ave'],[-64.5,68.5,'Maple Ave'],[64.5,68.5,'Oak Ave'],[-6,-15.5,'Main St'],[-6,68.5,'Meadow Ln']]){
+  for(const [x,z,t] of[[-64.5,-15.5,'Maple Ave'],[64.5,-15.5,'Oak Ave'],[-64.5,68.5,'Maple Ave'],[64.5,68.5,'Oak Ave'],[-6,-15.5,'Main St'],[-6,68.5,'Meadow Ln'],[36,-29.5,'Hill Rd'],[-6,-78.4,'Sunset Rd'],[36,-78.4,'Hill Rd']]){
     mesh(new THREE.CylinderGeometry(.07,.07,3,8),mat(0x9aa0aa,{metal:.4}),x,1.5,z);const s=sprite(t,{fg:'#fffaf2',size:46});s.scale.set(2.6,.95,1);s.position.set(x,3.4,z);scene.add(s);}
 }
 function buildFence(){const pts=[];for(let i=-128;i<=128;i+=4)pts.push([i,-129],[i,129],[-129,i],[129,i]);
@@ -427,6 +483,37 @@ function buildFarm(){const g=new THREE.Group();g.position.set(FARM.x,0,FARM.z);s
   for(let row=0;row<6;row++){flatRect(1.4,16,0x7a5233,FARM.x-28+row*2.2,FARM.z+4,.022);for(let i=0;i<10;i++){M.makeTranslation(FARM.x-28+row*2.2,.35,FARM.z-3.5+i*1.6);sprout.setMatrixAt(k++,M);}}
   sprout.castShadow=true;scene.add(sprout);cullAdd(sprout,FARM.x-22,FARM.z+4,130);
   noTree.push({x0:FARM.x-32,x1:FARM.x+22,z0:FARM.z-20,z1:FARM.z+18});cullAdd(g,FARM.x,FARM.z,150);bake(g);}
+function buildHills(){
+  // Trick Show stage
+  {const {x,z}=HILLS.stage,g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cullAdd(g,x,z,140);
+    mesh(new THREE.BoxGeometry(10,.8,5),mat(0xb5733f),0,.4,0,g);mesh(new THREE.BoxGeometry(10.3,.12,5.3),mat(0xe8c25a,{metal:.4,rough:.4}),0,.86,0,g);
+    mesh(new THREE.BoxGeometry(10,5.4,.4),mat(0x7b4fd6),0,3.1,-2.3,g);mesh(new THREE.BoxGeometry(10.4,.9,.5),mat(0xe23b3b),0,5.6,-2,g);
+    for(const s of[-1,1]){const c=mesh(new THREE.BoxGeometry(1.7,4.7,.35),mat(0xe23b3b),s*4.1,3.15,-1.9,g);c.rotation.z=-s*.03;
+      const st=starMesh(.55,mat(0xffc53d,{em:0xffc53d,emI:.5}));st.position.set(s*2.2,4.1,-2.06);g.add(st);
+      mesh(new THREE.CylinderGeometry(.12,.12,3,8),mat(0x2a2140),s*4.6,1.5,2.6,g);mesh(new THREE.SphereGeometry(.3,12,8),mat(0xfff6c8,{em:0xfff2a0,emI:.6}),s*4.6,3.1,2.6,g);}
+    mesh(new THREE.BoxGeometry(3,.4,1.2),mat(0xb5733f),0,.2,3,g);bake(g);addBox(x,z,10,5);for(const s of[-1,1])circles.push({x:x+s*4.6,z:z+2.6,r:.3});
+    const sg=sprite('TRICK SHOW',{fg:'#ffc53d',w:384,size:60});sg.scale.set(4.2,1.05,1);sg.position.set(x,7,z-2);scene.add(sg);cullAdd(sg,x,z,140);
+    noTree.push({x0:x-9,x1:x+9,z0:z-5,z1:z+9});}
+  // Baker Bea's cupcake stand
+  {const {x,z}=HILLS.bakery,g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cullAdd(g,x,z,130);
+    mesh(new THREE.BoxGeometry(4.4,1.1,1.4),mat(0xffc4dc),0,.55,0,g);mesh(new THREE.BoxGeometry(4.6,.12,1.6),mat(0xffffff),0,1.16,0,g);
+    for(const s of[-1,1])mesh(new THREE.BoxGeometry(.15,2.8,.15),mat(0xffffff),s*2.1,1.4,-1.6,g);
+    for(let i=0;i<5;i++){const cx=-1.6+i*.8;mesh(new THREE.CylinderGeometry(.18,.13,.2,10),mat([0xff5d8f,0x4fb3ff,0xffc53d,0x2fbf8f,0xb48cff][i]),cx,1.32,0,g);mesh(new THREE.SphereGeometry(.18,10,8),mat(0xfffaf2),cx,1.48,0,g);mesh(new THREE.SphereGeometry(.05,8,6),mat(0xe23b3b),cx,1.66,0,g);}
+    awning(g,0,3,-.6,5,0xff8fb3,0xfffaf2);bake(g);addBox(x,z,4.4,1.4);
+    const sg=sprite('CUPCAKES',{fg:'#ff8fb3',w:384,size:56});sg.scale.set(3.4,.85,1);sg.position.set(x,4.3,z-.6);scene.add(sg);cullAdd(sg,x,z,130);
+    noTree.push({x0:x-5,x1:x+5,z0:z-4,z1:z+6});}
+  // playground: slide, swings and a sandbox
+  {const {x,z}=HILLS.play,g=new THREE.Group();g.position.set(x,0,z);scene.add(g);cullAdd(g,x,z,120);
+    const sand=mesh(new THREE.BoxGeometry(5,.25,5),mat(0xeedcae),-5,.12,1,g,false);sand.receiveShadow=true;
+    mesh(new THREE.BoxGeometry(1.8,.15,1.8),mat(0xff5d8f),3.5,2.2,-1,g);for(const [a,b] of[[-.8,-.8],[.8,-.8],[-.8,.8],[.8,.8]])mesh(new THREE.CylinderGeometry(.08,.08,2.2,8),mat(0xffc53d),3.5+a,1.1,-1+b,g);
+    const sl=mesh(new THREE.BoxGeometry(1.2,.12,4),mat(0x4fb3ff),3.5,1.15,1.7,g);sl.rotation.x=.55;
+    for(const s of[-1,1]){const l=mesh(new THREE.CylinderGeometry(.08,.08,3.6,8),mat(0x2fbf8f),-1.5,1.7,-2.5+s*.7,g);l.rotation.x=s*.2;const r=mesh(new THREE.CylinderGeometry(.08,.08,3.6,8),mat(0x2fbf8f),-1.5+3.6,1.7,-2.5+s*.7,g);r.rotation.x=s*.2;}
+    mesh(new THREE.CylinderGeometry(.08,.08,3.8,8),mat(0x2fbf8f),.3,3.4,-2.5,g).rotation.z=Math.PI/2;
+    for(const sx of[-.6,1.2]){for(const s of[-1,1])mesh(new THREE.CylinderGeometry(.02,.02,2.6,4),mat(0x9aa0aa),sx+s*.3,2.1,-2.5,g,false);mesh(new THREE.BoxGeometry(.8,.08,.4),mat(0xe23b3b),sx,.8,-2.5,g);}
+    bake(g);circles.push({x:x+3.5,z:z-1,r:1.3},{x:x+.3,z:z-2.5,r:.4},{x:x-1.5,z:z-2.5,r:.4},{x:x+2.1,z:z-2.5,r:.4});
+    noTree.push({x0:x-9,x1:x+6,z0:z-5,z1:z+6});}
+  addCar(-22,-91.5,Math.PI/2,0x3b82f6);
+}
 function gardenBed(x,z,ry){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;scene.add(g);mesh(new THREE.BoxGeometry(2.6,.3,1.1),mat(0x7a5233),0,.15,0,g);
   for(let i=0;i<5;i++)flowerMesh(-1+i*.5,(i%2)*.3-.15,[0xff5d8f,0xffc53d,0xffffff,0xb48cff,0xff8a2a][i],.32,g);cullAdd(g,x,z,90);return bake(g);}
 function lawnStripes(cx,cz,ry,w,l){const g=new THREE.Group();g.position.set(cx,.016,cz);g.rotation.y=ry;scene.add(g);
@@ -456,7 +543,7 @@ function buildWorld(){
   HOUSES.forEach(h=>{house(h[0],h[1],h[2],h[3]);const f=houseFront(h,6.5);noTree.push({x0:f.x-5.5,x1:f.x+5.5,z0:f.z-5.5,z1:f.z+5.5});});
   for(const [x,z] of[[-8,29],[13,8],[-20,-11],[101,-26],[90,33],[-80,22],[-35,-13],[-50,48],[50,48],[-52,-10],[52,-10],...MAILS.map(m=>[m.x,m.z])])noTree.push({x0:x-3.5,x1:x+3.5,z0:z-3.5,z1:z+3.5});
   [[6,-12,0,0xe23b3b],[-74,-30,Math.PI/2,0x4fb3ff],[14,-30,Math.PI/2,0xff5d8f],[76,-30,-Math.PI/2,0xffc53d],[-6,84,Math.PI/2,0x2fbf8f],[84,32,0,0x7b4fd6],[-80,40,Math.PI,0xff8a2a]].forEach(a=>addCar(...a));
-  dreamHouse();buildNeighbors();
+  dreamHouse();buildHills();buildNeighbors();
   // benches + flower beds
   bench(-6,27,0);bench(6,27,0);bench(-11,15,Math.PI/2);
   for(const [x,z] of [[9,9],[-9,9],[12,24],[-13,22]]){const b=mesh(new THREE.CylinderGeometry(1.3,1.4,.35,16),mat(0x8a5a3c),x,.17,z);
@@ -465,7 +552,7 @@ function buildWorld(){
   seed=11;
   for(let i=0;i<300;i++){const x=(rnd()*2-1)*122,z=(rnd()*2-1)*122;if(blocked(x,z,3.5)||onRoad(x,z,3)||inNoTree(x,z,2)||Math.abs(x)<3&&z<10&&z>-14||Math.abs(z-6)<2.5&&Math.abs(x)<42||Math.hypot(x,z-18)<15)continue;tree(x,z,rnd());}
   // fence at the edge
-  buildFence();
+  buildFence();buildNight();
   setTimeout(()=>loadNature().catch(e=>console.warn('nature pack not loaded',e)),0);
 }
 let water,spout;
@@ -522,16 +609,16 @@ function flowerMesh(x,z,c,s=.5,parent=scene){const g=new THREE.Group();g.positio
   mesh(new THREE.SphereGeometry(.12*s*1.4,8,6),mat(0xffc53d),0,1.42*s,0,g,false);return g;}
 
 /* ---------- nature pack (Ultimate Stylized Nature by Quaternius, CC0) ---------- */
-const procTrees=[],treeSpots=[];let clouds=null;
+const procTrees=[],treeSpots=[];let clouds=null,skyU=null,cloudM=null;
 function skyAndClouds(){
   const sky=new THREE.Mesh(new THREE.SphereGeometry(240,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
-    uniforms:{top:{value:new THREE.Color(0x5fb4f5)},mid:{value:new THREE.Color(0xa9dcff)},bot:{value:new THREE.Color(0xd9f1ff)},sun:{value:new THREE.Vector3(.55,.6,.45).normalize()}},
+    uniforms:{top:{value:new THREE.Color(0x5fb4f5)},mid:{value:new THREE.Color(0xa9dcff)},bot:{value:new THREE.Color(0xd9f1ff)},sun:{value:new THREE.Vector3(.55,.6,.45).normalize()},sunC:{value:new THREE.Color(1,.93,.75)}},
     vertexShader:'varying vec3 vP;void main(){vP=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader:'uniform vec3 top,mid,bot,sun;varying vec3 vP;void main(){float h=vP.y;vec3 c=h>.12?mix(mid,top,smoothstep(.12,.7,h)):mix(bot,mid,smoothstep(-.05,.12,h));'+
-      'float s=max(dot(vP,sun),0.);c+=vec3(1.,.93,.75)*(pow(s,600.)*1.2+pow(s,12.)*.18);gl_FragColor=vec4(c,1.);}'}));
-  sky.renderOrder=-1;sky.frustumCulled=false;scene.add(sky);sky.onBeforeRender=()=>sky.position.copy(camera.position);
+    fragmentShader:'uniform vec3 top,mid,bot,sun,sunC;varying vec3 vP;void main(){float h=vP.y;vec3 c=h>.12?mix(mid,top,smoothstep(.12,.7,h)):mix(bot,mid,smoothstep(-.05,.12,h));'+
+      'float s=max(dot(vP,sun),0.);c+=sunC*(pow(s,600.)*1.2+pow(s,12.)*.18);gl_FragColor=vec4(c,1.);}'}));
+  skyU=sky.material.uniforms;sky.renderOrder=-1;sky.frustumCulled=false;scene.add(sky);sky.onBeforeRender=()=>sky.position.copy(camera.position);
   scene.background=new THREE.Color(0xd9f1ff);scene.fog.color.set(0xd2ecfb);scene.fog.near=40;scene.fog.far=108;
-  clouds=new THREE.Group();scene.add(clouds);const cm=new THREE.MeshPhongMaterial({color:0xffffff,emissive:0xdfe9f5,emissiveIntensity:.55,shininess:0,flatShading:true,fog:false});
+  clouds=new THREE.Group();scene.add(clouds);const cm=cloudM=new THREE.MeshPhongMaterial({color:0xffffff,emissive:0xdfe9f5,emissiveIntensity:.55,shininess:0,flatShading:true,fog:false});
   const puff=new THREE.IcosahedronGeometry(1,1);seed=99;
   for(let i=0;i<14;i++){const c=new THREE.Group(),a=rnd()*Math.PI*2,r=70+rnd()*60;c.position.set(Math.cos(a)*r,34+rnd()*22,Math.sin(a)*r);c.rotation.y=-a;
     const n=4+Math.floor(rnd()*4);for(let j=0;j<n;j++){const p=new THREE.Mesh(puff,cm);const s=3+rnd()*3.5;p.scale.set(s*1.3,s*.8,s);p.position.set((j-n/2)*4.2+rnd()*2,rnd()*2.5,rnd()*3);c.add(p);}clouds.add(c);}bake(clouds);
@@ -598,6 +685,42 @@ async function loadNature(){
   fl.forEach(([x,z,s],i)=>{M4.compose(V.set(x,0,z),Q.identity(),SC.set(s,s,s));tr.setMatrixAt(i,M4);});tr.frustumCulled=false;scene.add(tr);
   for(const g of procTrees)scene.remove(g);
 }
+
+
+/* ---------- day and night ---------- */
+// A day lasts DAY_LEN seconds: sunny day, a pink sunset, a starry night (never too dark), then sunrise.
+const DAY_LEN=420;let dayT=.06,wasNight=false,lastDN=-1,stars=null,flies=null,lampM=null;
+const C3=h=>new THREE.Color(h);
+const SKYC={day:[C3(0x5fb4f5),C3(0xa9dcff),C3(0xd9f1ff)],dusk:[C3(0x5a6fc0),C3(0xffb38a),C3(0xffd6a8)],night:[C3(0x0b1636),C3(0x1c2d5e),C3(0x34497e)]};
+const FOGC={day:C3(0xd2ecfb),dusk:C3(0xf0c3a8),night:C3(0x26375f)},SUNC={day:C3(0xfff3dc),dusk:C3(0xffb070),night:C3(0xa8b8ff)};
+const winMats=[mat(0x9fd8ff,{rough:.2}),mat(0x9fd8ff,{rough:.15,metal:.2})];
+function buildNight(){
+  const N=500,sp=new Float32Array(N*3);for(let i=0;i<N;i++){const a=Math.random()*Math.PI*2,y=.12+Math.random()*.88,r=Math.sqrt(1-y*y);sp.set([Math.cos(a)*r*200,y*200,Math.sin(a)*r*200],i*3);}
+  const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  stars=new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:2,sizeAttenuation:false,transparent:true,opacity:0,fog:false,depthWrite:false}));stars.frustumCulled=false;stars.visible=false;scene.add(stars);
+  const F=70,fp=new Float32Array(F*3),home=[];for(let i=0;i<F;i++){const c=i%2?{x:POND.x,z:POND.z,r:16}:{x:0,z:18,r:15},a=Math.random()*Math.PI*2,r=c.r*(.4+Math.random()*.6);home.push([c.x+Math.cos(a)*r,c.z+Math.sin(a)*r,Math.random()*6]);}
+  const fg=new THREE.BufferGeometry();fg.setAttribute('position',new THREE.BufferAttribute(fp,3));
+  flies=new THREE.Points(fg,new THREE.PointsMaterial({color:0xfff27a,size:.35,transparent:true,opacity:0,depthWrite:false}));flies.userData.home=home;flies.frustumCulled=false;flies.visible=false;scene.add(flies);
+  // street lamps along the roads
+  lampM=new THREE.MeshStandardMaterial({color:0xfff6c8,emissive:0xfff2a0,emissiveIntensity:.05,roughness:.4});const L=[];
+  for(const z of[-15.2,-28.8,68.4,81.6,-78.2,-91.8])for(let x=-114;x<=114;x+=19){if(onRoad(x,z,1)||blocked(x,z,1.6)||spots.some(s=>Math.hypot(s.x-x,s.z-z)<3.5)||Math.hypot(HDOOR.x-x,HDOOR.z-z)<5||[HILLS.stage,HILLS.bakery,HILLS.play].some(p=>Math.abs(p.x-x)<9&&Math.abs(p.z-z)<12))continue;L.push([x,z]);circles.push({x,z,r:.2});noTree.push({x0:x-1.5,x1:x+1.5,z0:z-1.5,z1:z+1.5});}
+  const pole=new THREE.InstancedMesh(new THREE.CylinderGeometry(.08,.1,3.4,8).translate(0,1.7,0),mat(0x4a4f59,{metal:.4,rough:.5}),L.length),bulb=new THREE.InstancedMesh(new THREE.SphereGeometry(.3,12,8).translate(0,3.55,0),lampM,L.length),M=new THREE.Matrix4();
+  L.forEach(([x,z],i)=>{M.makeTranslation(x,0,z);pole.setMatrixAt(i,M);bulb.setMatrixAt(i,M);});pole.castShadow=true;scene.add(pole,bulb);}
+const smooth=(a,b,x)=>{x=Math.min(1,Math.max(0,(x-a)/(b-a)));return x*x*(3-2*x);};
+function dayUpdate(dt){if(mode==='play'&&SET.daynight&&!inHome)dayT=(dayT+dt/DAY_LEN)%1;const t=SET.daynight?dayT:.2;
+  const n=smooth(.56,.68,t)*(1-smooth(.86,.97,t)),k=Math.min(1,Math.max(0,1-Math.abs(t-.6)/.07)+Math.max(0,1-Math.abs(t-.92)/.06))*(1-n*.5);
+  if(stars){stars.position.copy(camera.position);if(n>.02&&flies.visible){const P=flies.geometry.attributes.position,h=flies.userData.home;
+    for(let i=0;i<h.length;i++)P.setXYZ(i,h[i][0]+Math.sin(clock*.7+h[i][2])*1.2,.6+Math.sin(clock*1.3+h[i][2]*2)*.4+.5,h[i][1]+Math.cos(clock*.5+h[i][2])*1.2);P.needsUpdate=true;
+    flies.material.opacity=n*(.6+.4*Math.sin(clock*5));}}
+  const key=Math.round(n*200)+Math.round(k*200)*1000;if(key===lastDN||!skyU)return;lastDN=key;
+  ['top','mid','bot'].forEach((u,i)=>skyU[u].value.copy(SKYC.day[i]).lerp(SKYC.night[i],n).lerp(SKYC.dusk[i],k*.85));
+  scene.fog.color.copy(FOGC.day).lerp(FOGC.night,n).lerp(FOGC.dusk,k*.8);scene.background.copy(scene.fog.color);
+  hemi.intensity=.75-.36*n;sunL.intensity=.85-.55*n;sunL.color.copy(SUNC.day).lerp(SUNC.night,n).lerp(SUNC.dusk,k);skyU.sunC.value.setRGB(1,.93,.75).multiplyScalar(1-.65*n);
+  if(cloudM){cloudM.emissiveIntensity=.55*(1-.75*n);cloudM.color.setHex(0xffffff).lerp(C3(0xffc0a0),k*.6).lerp(C3(0x6a7aa8),n);}
+  for(const m of winMats)m.emissive.setHex(0xffcf70).multiplyScalar(n*.85);if(lampM)lampM.emissiveIntensity=.05+n*1.3;
+  if(stars){stars.visible=n>.02;stars.material.opacity=n;flies.visible=n>.02;}
+  if(n>.8&&!wasNight){wasNight=true;if(mode==='play'){toast('The stars are out! Look for fireflies by the pond.');if(!S.st.night){S.st.night=1;refreshHUD();}}}
+  else if(n<.15&&wasNight){wasNight=false;if(mode==='play')toast('Good morning, sunshine!');}}
 
 /* ---------- people ---------- */
 function person(o){const g=new THREE.Group();const shirt=mat(o.shirt),skin=mat(o.skin||0xf2c29b),pants=mat(o.pants||0x3b5bdb),hair=mat(o.hair),shoe=mat(o.shoes??0xffffff);const style=o.style||(o.pony?'pony':'short');
@@ -770,7 +893,7 @@ function dressWith(d,gear){
         const rx=T.sw[0]+.03,ry=T.sw[1]+.03,dy=T.y-(T.top+.03);const sh=mesh(new THREE.CylinderGeometry(1,1,L,24,1,true,Math.PI*.62,Math.PI*.76),cm,0,dy,-L/2,cp);
         sh.rotation.x=Math.PI/2;sh.scale.set(rx,1,ry);sty=dy+ry+.01;}
       const st=starMesh(.13,gold);st.rotation.x=-Math.PI/2;st.position.set(0,sty,-L*.45);cp.add(st);ring(gold,.035);a.userData.cape=cp;}}
-  const pe=d.ears&&d.ears.length,wide=hd&&['cowboy','straw','wizard'].includes(hd.kind);
+  const pe=d.ears&&d.ears.length,wide=hd&&['cowboy','straw','wizard','pirate'].includes(hd.kind);
   if(pe)for(const e of d.ears){const s=e.userData.s;e.rotation.z=(wide?-1.45:hd?-.95:-.28)*s;e.position.set((wide?.2:.15)*s,wide?.13:.28,-.05);}
   if(d.topknot)d.topknot.visible=!hd;const htop=d.topknot&&hd?.25:H.top;
   const hg=new THREE.Group();hg.position.set(0,htop+(pe&&hd?.04:0),pe&&hd?.06:0);hg.scale.setScalar(H.s);ha.add(hg);
@@ -790,6 +913,9 @@ function dressWith(d,gear){
     if(hd.kind==='beanie'){mesh(new THREE.SphereGeometry(.22,20,12,0,Math.PI*2,0,Math.PI/2),m,0,-.03,0,hg).scale.set(1,.9,1.05);const r=mesh(new THREE.TorusGeometry(.215,.04,8,24),mat(lighterHex(hd.c,.5)),0,-.02,0,hg);r.rotation.x=Math.PI/2;r.scale.y=1.05;
       mesh(new THREE.SphereGeometry(.075,10,8),mat(0xffffff),0,.19,0,hg);}
     if(hd.kind==='chef'){mesh(new THREE.CylinderGeometry(.17,.16,.16,18),m,0,.08,0,hg);mesh(new THREE.SphereGeometry(.22,16,12),m,0,.25,0,hg).scale.set(1,.65,1);}
+    if(hd.kind==='pirate'){mesh(new THREE.CylinderGeometry(.44,.44,.06,3),m,0,.02,0,hg);mesh(new THREE.CylinderGeometry(.455,.455,.025,3),gold,0,.055,0,hg,false);
+      mesh(new THREE.SphereGeometry(.22,16,10,0,Math.PI*2,0,Math.PI/2),m,0,.05,0,hg).scale.set(1,1.15,1);
+      mesh(new THREE.SphereGeometry(.065,10,8),mat(0xffffff),0,.17,.2,hg,false);for(const s of[-1,1]){const b=mesh(new THREE.BoxGeometry(.17,.03,.02),mat(0xffffff),0,.08,.23,hg,false);b.rotation.z=s*.6;}}
     if(hd.kind==='crown'){mesh(new THREE.CylinderGeometry(.17,.15,.12,16,1,true),gold,0,.06,0,hg);for(let i=0;i<5;i++){const an=i/5*Math.PI*2;mesh(new THREE.ConeGeometry(.04,.12,6),gold,Math.cos(an)*.16,.17,Math.sin(an)*.16,hg);}
       mesh(new THREE.SphereGeometry(.035,8,6),mat(0xff3a6e,{rough:.1}),0,.08,.16,hg);}}
   if(fc){const F=H.face,m=gearMat(fc);
@@ -994,14 +1120,18 @@ function homeUpdate(dt){if(carry)carryUpdate(dt);const C=camera.position;for(con
     d.jump=Math.max(0,d.jump-dt*1.8);d.body.position.y=Math.sin(d.jump*Math.PI)*.8;});}
 // the house on Meadow Ln
 let homeSign=null,homeTag=null;
+// outside paint: lavender until you buy it, then pink or blue (S.home.paint)
+const HPAINT=[{name:'Lavender',wall:0xe3d4ff,roof:0xff7ab8},{name:'Pink',wall:0xffc4dc,roof:0xff5d8f,btn:'#ff5d8f',sh:'#c93a69'},{name:'Blue',wall:0xbfdcff,roof:0x3b82f6,btn:'#3b82f6',sh:'#2a5fb8'}];
+const houseWallM=new THREE.MeshStandardMaterial({color:HPAINT[0].wall,roughness:.85}),houseRoofM=new THREE.MeshStandardMaterial({color:HPAINT[0].roof,roughness:.85,flatShading:true});
+function paintHouse(){const P=HPAINT[S.home.paint]||HPAINT[0];houseWallM.color.set(P.wall);houseRoofM.color.set(P.roof);}
 function dreamHouse(){const g=new THREE.Group();g.position.set(HOME.x,0,HOME.z);scene.add(g);cullAdd(g,HOME.x,HOME.z,150);
-  const wall=0xe3d4ff,trim=0xffffff,roof=0xff7ab8;
-  mesh(new THREE.BoxGeometry(11,4.6,8),mat(wall),0,2.3,0,g);mesh(new THREE.BoxGeometry(11.3,.3,8.3),mat(trim),0,4.65,0,g);
-  const r=prism(11.8,9,3,roof);r.position.set(0,4.75,0);r.castShadow=true;g.add(r);mesh(new THREE.BoxGeometry(1,2.4,1),mat(0xc8694a),3.4,6.7,-1.6,g);
+  const trim=0xffffff;
+  mesh(new THREE.BoxGeometry(11,4.6,8),houseWallM,0,2.3,0,g);mesh(new THREE.BoxGeometry(11.3,.3,8.3),mat(trim),0,4.65,0,g);
+  const r=prism(11.8,9,3,0);r.material=houseRoofM;r.position.set(0,4.75,0);r.castShadow=true;g.add(r);mesh(new THREE.BoxGeometry(1,2.4,1),mat(0xc8694a),3.4,6.7,-1.6,g);
   const hm=heartMesh(.6,mat(0xff5d8f,{em:0xff5d8f,emI:.35}));hm.position.set(0,5.9,4.56);g.add(hm);
   mesh(new THREE.BoxGeometry(2,3,.2),mat(trim),0,1.5,4.05,g);mesh(new THREE.BoxGeometry(1.6,2.7,.25),mat(0x7b4fd6),0,1.4,4.08,g);mesh(new THREE.SphereGeometry(.09,8,6),mat(0xe8c25a,{metal:.7,rough:.25}),.55,1.4,4.25,g);
   mesh(new THREE.BoxGeometry(4.4,.25,2.2),mat(0xfffaf2),0,.12,5.1,g);for(const s of[-1,1])mesh(new THREE.CylinderGeometry(.14,.14,3.4,10),mat(trim),s*1.9,1.8,5.95,g);
-  mesh(new THREE.BoxGeometry(4.6,.25,2.5),mat(roof),0,3.55,5.15,g);
+  mesh(new THREE.BoxGeometry(4.6,.25,2.5),houseRoofM,0,3.55,5.15,g);
   for(const s of[-1,1]){mesh(new THREE.BoxGeometry(1.9,1.6,.15),mat(trim),s*3.6,2.4,4.02,g);mesh(new THREE.BoxGeometry(1.6,1.3,.2),mat(0x9fd8ff,{rough:.2}),s*3.6,2.4,4.05,g);
     mesh(new THREE.BoxGeometry(1.9,.25,.5),mat(0xff9ec7),s*3.6,1.5,4.25,g);for(let i=0;i<4;i++)mesh(new THREE.SphereGeometry(.14,8,6),mat([0xff5d8f,0xffc53d,0xffffff,0xb48cff][i]),s*3.6-.6+i*.4,1.72,4.28,g,false);}
   for(const s of[-1,1])for(let x=1.3;x<=7;x+=.55){mesh(new THREE.BoxGeometry(.18,1,.1),mat(trim),s*x,.5,9.6,g);}
@@ -1012,14 +1142,14 @@ function dreamHouse(){const g=new THREE.Group();g.position.set(HOME.x,0,HOME.z);
   const sg=new THREE.Group();sg.position.set(HOME.x+3.4,0,HOME.z+7.6);scene.add(sg);cullAdd(sg,sg.position.x,sg.position.z,110);
   mesh(new THREE.BoxGeometry(.15,2,.15),mat(0xffffff),0,1,0,sg);homeSign=new THREE.Mesh(new THREE.PlaneGeometry(1.8,.9),new THREE.MeshBasicMaterial({color:0xffffff}));homeSign.position.set(0,1.75,.1);sg.add(homeSign);
   spots.push({x:HDOOR.x,z:HDOOR.z,r:2.8,get label(){return S.home.own?'Go inside':'Dream Home'},fn:()=>S.home.own?enterHome():openHomeSale()});refreshHome();}
-function refreshHome(){if(!homeSign)return;const own=S.home.own;if(homeSign.material.map)homeSign.material.map.dispose();
+function refreshHome(){paintHouse();if(!homeSign)return;const own=S.home.own;if(homeSign.material.map)homeSign.material.map.dispose();
   homeSign.material.map=textTex(own?'MY HOME':'FOR SALE',{w:384,h:192,bg:own?'#ff9ec7':'#fffaf2',fg:own?'#ffffff':'#e23b3b',size:80});homeSign.material.needsUpdate=true;
   if(homeTag)scene.remove(homeTag);homeTag=sprite(own?'MY HOME':'FOR SALE',{fg:own?'#ffc53d':'#ff8fb3'});homeTag.scale.set(2.8,1,1);homeTag.position.set(HOME.x,9.3,HOME.z+4);scene.add(homeTag);cullAdd(homeTag,HOME.x,HOME.z,150);}
 function openHomeSale(){const can=S.coins>=HOME.price;
   openSheet(`<div class="tag">Meadow Ln</div><h2>Dream Home</h2><div class="card"><div class="tag">For sale</div><h3>A home for you and your ESSAs</h3>
-    <p>A lavender house with a heart window, a big living room, and lots of space for furniture. ESSAs who stay home from walks wait for you here. Comes with a free rug and pup beds!</p><div class="price">${HOME.price} paw coins</div></div>
-    ${can?'':`<p>You need ${HOME.price-S.coins} more paw coins. Keep collecting!</p>`}
-    <div class="row"><button class="btn" data-act="buyHome" ${can?'':'disabled'}>Buy the house</button><button class="btn alt" data-act="close">Just looking</button></div>`,'shop');}
+    <p>A cozy house with a heart window, a big living room, and lots of space for furniture. ESSAs who stay home from walks wait for you here. Comes with a free rug and pup beds!</p><div class="price">${HOME.price} paw coins</div></div>
+    <p>${can?'Which color do you want your house to be?':`You need ${HOME.price-S.coins} more paw coins. Keep collecting!`}</p>
+    <div class="row">${[1,2].map(k=>`<button class="btn" style="background:${HPAINT[k].btn};box-shadow:0 4px 0 ${HPAINT[k].sh}" data-act="buyHome" data-arg="${k}" ${can?'':'disabled'}>Buy ${HPAINT[k].name.toLowerCase()} house</button>`).join('')}<button class="btn alt" data-act="close">Just looking</button></div>`,'shop');}
 let furnI=0,furnC=0;
 function openFurn(i){const n=FURN_IDS.length;if(i!=null){furnI=((+i)%n+n)%n;const f=S.home.f[FURN_IDS[furnI]];furnC=f?f.c:0;}
   const id=FURN_IDS[furnI],F=FURN[id],own=S.home.f[id],can=S.coins>=F.price,c=own?own.c:furnC;
@@ -1033,13 +1163,14 @@ function openFurn(i){const n=FURN_IDS.length;if(i!=null){furnI=((+i)%n+n)%n;cons
     <p class="keys">Tip: walk up to any furniture and tap Move to carry it to a new spot.</p>`,'shop');
   pvShow('f:'+id+':'+c,()=>furnPreview(id,c),.85);mountBox();}
 function openDecor(){const row=(t,k,list)=>`<div class="wr"><div class="tag">${t}</div><div class="chips">${list.map((col,i)=>`<button class="sw ${S.home[k]===i?'on':''}" style="background:${hexS(col)}" data-act="decorSet" data-arg="${k}:${i}" aria-label="${t} ${i+1}"></button>`).join('')}</div></div>`;
-  openSheet(`<div class="tag">Free to change any time</div><h2>Walls and floor</h2>${row('Wallpaper','wall',WALL_C)}${row('Floor','floor',FLOOR_C)}
+  const paint=`<div class="wr"><div class="tag">Outside of my house</div><div class="chips">${[1,2].map(k=>`<button class="chip2 ${S.home.paint===k?'on':''}" data-act="decorSet" data-arg="paint:${k}">${HPAINT[k].name}</button>`).join('')}</div></div>`;
+  openSheet(`<div class="tag">Free to change any time</div><h2>Walls and floor</h2>${row('Wallpaper','wall',WALL_C)}${row('Floor','floor',FLOOR_C)}${paint}
     <div class="row"><button class="btn alt" data-act="furn">Furniture</button><button class="btn" data-act="close">Done</button></div>`);}
 const HOME_ACTS={
-  buyHome:()=>{if(S.home.own||S.coins<HOME.price)return;S.coins-=HOME.price;S.home.own=true;
+  buyHome:k=>{if(S.home.own||S.coins<HOME.price)return;S.coins-=HOME.price;S.home.own=true;S.home.paint=+k===2?2:1;
     for(const id of['rug','dogbeds'])if(!S.home.f[id]){const F=FURN[id];S.home.f[id]={c:0,x:F.x,z:F.z,r:F.ry||0};}
     save();refreshHome();refreshHUD();jingle();setTimeout(jingle,450);burst(player.position.clone().setY(2),90);
-    openSheet(`<div class="tag">Meadow Ln</div><h2>It's your house!</h2><p>Welcome to your Dream Home. It came with a round rug and plush pup beds. Buy more furniture from the catalog by the door inside.</p>
+    openSheet(`<div class="tag">Meadow Ln</div><h2>It's your house!</h2><p>Welcome to your Dream Home. It came with a round rug and plush pup beds. Buy more furniture from the catalog by the door inside. You can repaint the outside any time from Walls and floor.</p>
       <div class="row"><button class="btn" data-act="goIn">Go inside</button><button class="btn alt" data-act="close">Later</button></div>`);},
   goIn:()=>{closeSheet();enterHome();},
   goHome:()=>{closeSheet();if(driving)exitCar(true);enterHome();},
@@ -1048,7 +1179,7 @@ const HOME_ACTS={
   buyFurn:id=>{const F=FURN[id];if(!F||S.home.f[id]||S.coins<F.price)return;S.coins-=F.price;S.home.f[id]={c:furnC,x:F.x,z:F.z,r:F.ry||0};
     refreshRoom();if(id==='dogbeds')homeDogsBuild();save();refreshHUD();jingle();if(furnG[id])burst(furnG[id].getWorldPosition(new THREE.Vector3()).setY(1.5),40);
     toast(`The ${F.name} is in your house!`);keepScroll(()=>openFurn());},
-  decor:openDecor,decorSet:arg=>{const [k,v]=arg.split(':');S.home[k]=+v;refreshRoom();save();keepScroll(openDecor);}
+  decor:openDecor,decorSet:arg=>{const [k,v]=arg.split(':');S.home[k]=+v;refreshRoom();paintHouse();save();keepScroll(openDecor);}
 };
 
 function enterCar(c){driving=c;c.v=0;c.steer=0;c.col.r=0;dogsW.forEach((d,i)=>{d.leash.forEach(m=>m.visible=false);if(i)d.g.visible=false;});
@@ -1063,7 +1194,7 @@ function driveUpdate(dt,mx,mz){const c=driving,ml=Math.min(1,Math.hypot(mx,mz));
   if(ml>.1){const a=Math.atan2(mx,mz);da=Math.atan2(Math.sin(a-c.h),Math.cos(a-c.h));want=21*ml*(1-.5*Math.min(1,Math.abs(da)/2.4));}
   const st=ml>.1?Math.max(-1,Math.min(1,da*1.3)):0;c.steer=(c.steer||0)+(st-(c.steer||0))*Math.min(1,dt*4);
   c.v+=Math.max(-dt*12,Math.min(dt*7,want-c.v));c.h+=c.steer*dt*2*Math.min(1,.35+c.v/12);
-  const p=c.g.position,ox=p.x,oz=p.z,step=c.v*dt;p.x+=Math.sin(c.h)*step;p.z+=Math.cos(c.h)*step;collide(p,1.7);
+  const p=c.g.position,ox=p.x,oz=p.z,step=c.v*dt;p.x+=Math.sin(c.h)*step;p.z+=Math.cos(c.h)*step;collide(p,1.7);S.st.drive+=Math.hypot(p.x-ox,p.z-oz);
   if(step>.005){const moved=Math.hypot(p.x-ox,p.z-oz);if(moved<step*.9)c.v+=(moved/dt-c.v)*Math.min(1,dt*6);}
   c.g.rotation.y=c.h;c.g.rotation.z=c.steer*Math.min(1,c.v/14)*.05;c.g.position.y=Math.sin(clock*18)*.012*Math.min(1,c.v/6);
   c.wheels.forEach((w,i)=>{w.rotation.x+=c.v*dt/.5;w.rotation.y=i<2?c.steer*.4:0;});
@@ -1116,6 +1247,9 @@ function buildNeighbors(){
   addWalker(ring,{shirt:0xff5d8f,hair:0x2b1a10,pony:true,pants:0x2a2140},'lab',{neck:'bandana'},'This is Max. He loves the park!');
   addWalker([[-52,-14],[52,-14],[52,67.5],[-52,67.5]],{shirt:0x2a2140,hair:0xe6c068,pants:0x2f4fbf,hat:0xe23b3b},'collie',{neck:'collar_star'},'We walk around the whole block every day.');
   addWalker([[-115,81.5],[115,81.5]],{shirt:0xb48cff,hair:0xc0502b,style:'bob',pants:0xe9dcc0},'spotty',{head:'bowhat'},'Dottie the plush comes on every walk with me!');
+  addWalker([[-112,-79],[112,-79]],{shirt:0x2fbf8f,hair:0xe6c068,style:'long',pants:0xb48cff},'pom',{head:'party'},'Welcome to Sunny Hills! Have you tried the Trick Show?');
+  addGardener(HOUSES[19],{shirt:0xff9ec7,hair:0x1b1b1f,pants:0x2a2140,skin:0x7a4e2f,hat:0xffffff},'Sunny Hills has the prettiest sunsets!');
+  addMower(HOUSES[25],{shirt:0x3b82f6,hair:0x5a3418,pants:0x6d8b74},'The new houses get the freshest grass in town!');
   addWalker([[-115,-15],[-68,-15],[-68,52],[-115,52]],{shirt:0xffc53d,hair:0x1b1b1f,pants:0x2a2140,skin:0xb07850},'bubble',{body:'tutu'},'Bubbles wanted to see the ducks at the pond.');
 }
 
@@ -1128,33 +1262,46 @@ function addNpc(id,x,z,ry,look,label){const g=person(look);g.position.set(x,0,z)
 const Q={
   bones:{who:'Grandpa Joe',need:5,item:'bones',reward:'cape',rewardName:'a Superhero Cape',
     intro:'My old dog Rusty buried 5 bones all over town and forgot where they are. Can you find them? I\'ll give you a Superhero Cape that flaps when your ESSA runs!',
-    hint:n=>`You found ${n} of 5 bones. Look for the sparkly white bones with a light above them!`,done:'Your pup looks super in that cape!'},
+    hint:n=>`You found ${n} of 5 bones. Look for the sparkly white bones with a light above them!`,done:'Your pup looks super in that cape!',
+    again:'Oh dear, Rusty buried 5 more bones! Can you find them again? I\'ll give you 30 paw coins.'},
   flowers:{who:'Lily',need:6,item:'flowers',reward:'flowercrown',rewardName:'a Flower Crown',
     intro:'Can you pick 6 glowing flowers around town? I\'ll make a bouquet for my grandma and weave a sparkly Flower Crown for your ESSA!',
-    hint:n=>`You picked ${n} of 6 flowers. They have a pink light above them.`,done:'Grandma loved the flowers. Thank you!'},
+    hint:n=>`You picked ${n} of 6 flowers. They have a pink light above them.`,done:'Grandma loved the flowers. Thank you!',
+    again:'Grandma wants another bouquet! Can you pick 6 more glowing flowers? I\'ll give you 30 paw coins.'},
   walk:{who:'Coach Rosa',need:4,item:'flags',reward:'rainbow_leash',rewardName:'a Rainbow Glow Leash',
     intro:'Even stuffed pups love a walk! Take your ESSA to all 4 flags in the corners of town and I\'ll give you a Rainbow Glow Leash.',
-    hint:n=>`You reached ${n} of 4 flags. They are in the corners of town.`,done:'What a happy, well-walked plush pup!',needDog:true},
+    hint:n=>`You reached ${n} of 4 flags. They are in the corners of town.`,done:'What a happy, well-walked plush pup!',needDog:true,
+    again:'Ready for another big walk? Take your ESSA to all 4 flags again for 30 paw coins!'},
   chicks:{who:'Farmer Gus',need:5,item:'chicks',reward:'strawhat',rewardName:'a Straw Sun Hat',
     intro:'Oh no! My 5 baby chicks ran off from the farm. Can you find them and bring them home? I\'ll give your ESSA my best Straw Sun Hat.',
-    hint:n=>`You found ${n} of 5 chicks. They are somewhere around the farm. Look for the yellow lights!`,done:'All my chicks are home safe. Thank you, partner!'},
+    hint:n=>`You found ${n} of 5 chicks. They are somewhere around the farm. Look for the yellow lights!`,done:'All my chicks are home safe. Thank you, partner!',
+    again:'Those silly chicks got out again! Can you round them up? I\'ll pay you 30 paw coins.'},
   ducks:{who:'Captain Mae',need:5,item:'ducks',reward:'lifevest',rewardName:'a Splashy Life Vest',
     intro:'Ahoy! The wind blew my 5 rubber ducks all around the pond and the woods. Can you find them? Your ESSA will get a Splashy Life Vest!',
-    hint:n=>`You found ${n} of 5 rubber ducks. Look around the pond for the blue lights.`,done:'My ducks are back in a row. Ahoy, matey!'},
+    hint:n=>`You found ${n} of 5 rubber ducks. Look around the pond for the blue lights.`,done:'My ducks are back in a row. Ahoy, matey!',
+    again:'Blow me down, the wind took my ducks again! Find all 5 for 30 paw coins?'},
   mail:{who:'Postie Pip',need:4,item:'letters',reward:'mailbag',rewardName:'a Mail Pup Bag',
     intro:'I have 4 letters for houses far across town. Can you deliver them to the mailboxes with the yellow lights? A car makes it quick! You\'ll earn a Mail Pup Bag.',
-    hint:n=>`You delivered ${n} of 4 letters. Follow the yellow lights on the map to the mailboxes.`,done:'Every letter delivered. You and your pup are a super mail team!'}
+    hint:n=>`You delivered ${n} of 4 letters. Follow the yellow lights on the map to the mailboxes.`,done:'Every letter delivered. You and your pup are a super mail team!',
+    again:'More mail came in for different houses! Deliver 4 more letters for 30 paw coins?'},
+  cupcakes:{who:'Baker Bea',need:5,item:'cupcakes',reward:'apron',rewardName:"a Baker's Apron",
+    intro:'My cupcake wagon hit a bump and 5 cupcakes rolled all over Sunny Hills! Can you find them? Your ESSA will get my very own Baker\'s Apron.',
+    hint:n=>`You found ${n} of 5 cupcakes. Look around Sunny Hills for the pink lights!`,done:'Every cupcake is safe and sound. You are the sweetest helper!',
+    again:'Oopsie, the wagon tipped over again! Can you find 5 more cupcakes? I\'ll give you 30 paw coins.'}
 };
-const MAILS=[4,8,16,12].map(i=>houseFront(HOUSES[i],5.4,3));
+// each time Postie Pip asks again, the letters go to a different set of houses
+const MAIL_SETS=[[4,8,16,12],[0,9,13,5],[3,10,15,11]].map(set=>set.map(i=>houseFront(HOUSES[i],5.4,3)));
+const MAILS=MAIL_SETS.flat(),mailSet=()=>MAIL_SETS[(S.q.mail.rep||0)%MAIL_SETS.length];
 function qCount(id){return S.q[id].f?S.q[id].f.reduce((a,b)=>a+b,0):S.q[id].n;}
 function talk(id){
   if(id==='judge')return talkJudge();
+  if(id==='trick')return openTrickShow();
   const q=Q[id],st=S.q[id];let h=`<div class="tag">${q.who}</div>`;
   if(q.needDog&&!S.dogs.length){h+=`<h2>You need an ESSA first!</h2><p>Come back when you have a plush pup to walk. ValuMart sells them.</p><div class="row"><button class="btn" data-act="close">OK</button></div>`;}
   else if(st.s==='new'){h+=`<h2>Can you help me?</h2><p>${q.intro}</p><div class="row"><button class="btn" data-act="qstart" data-arg="${id}">I'll help!</button><button class="btn alt" data-act="close">Maybe later</button></div>`;}
   else if(st.s==='active'&&qCount(id)<q.need){h+=`<h2>Keep going!</h2><p>${q.hint(qCount(id))}</p><div class="row"><button class="btn" data-act="close">On it!</button></div>`;}
-  else if(st.s==='active'){h+=`<h2>You did it!</h2><p>Thank you so much! Here is ${q.rewardName}, plus 20 paw coins.</p><div class="row"><button class="btn" data-act="qdone" data-arg="${id}">Yay!</button></div>`;}
-  else{h+=`<h2>Hi again!</h2><p>${q.done}</p><div class="row"><button class="btn" data-act="close">Bye!</button></div>`;}
+  else if(st.s==='active'){h+=`<h2>You did it!</h2><p>${st.rep?'Thank you for helping me again! Here are 30 paw coins.':`Thank you so much! Here is ${q.rewardName}, plus 20 paw coins.`}</p><div class="row"><button class="btn" data-act="qdone" data-arg="${id}">Yay!</button></div>`;}
+  else{h+=`<h2>Hi again!</h2><p>${q.done}</p><p>${q.again}</p><div class="row"><button class="btn" data-act="qagain" data-arg="${id}">Sure, I'll help!</button><button class="btn alt" data-act="close">Bye!</button></div>`;}
   openSheet(h);}
 function giveGear(id,equip){if(!owns(id))S.owned.push(id);if(!equip)return;const G=GEAR[id];
   if(G.slot==='leash')S.leash=id;else{const d=S.dogs.find(x=>x.out!==false)||S.dogs[0];if(d){d.gear=d.gear||{};d.gear[G.slot]=id;}}}
@@ -1182,12 +1329,14 @@ function addItem(kind,x,z,extra={}){let m;
   else if(kind==='duck'){m=new THREE.Group();const y=mat(0xffd23f,{rough:.25}),o=mat(0xff7a1a,{rough:.3}),k=mat(0x222222);const b=new THREE.Mesh(new THREE.SphereGeometry(.3,14,10),y);b.scale.set(1,.75,1.3);m.add(b);
     const h=new THREE.Mesh(new THREE.SphereGeometry(.2,12,10),y);h.position.set(0,.3,.2);m.add(h);const bk=new THREE.Mesh(new THREE.BoxGeometry(.18,.06,.16),o);bk.position.set(0,.27,.4);m.add(bk);
     for(const s of[-1,1]){const e=new THREE.Mesh(new THREE.SphereGeometry(.035,6,6),k);e.position.set(.1*s,.36,.33);m.add(e);}}
+  else if(kind==='cupcake'){m=new THREE.Group();const lin=new THREE.Mesh(new THREE.CylinderGeometry(.24,.17,.26,12),mat(0xff5d8f));m.add(lin);
+    const fr=new THREE.Mesh(new THREE.SphereGeometry(.25,12,10),mat(0xfffaf2));fr.position.y=.2;fr.scale.y=.8;m.add(fr);const ch=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),mat(0xe23b3b));ch.position.y=.42;m.add(ch);}
   else if(kind==='mail'){m=new THREE.Group();m.rotation.y=extra.ry||0;const post=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,1.2,8),mat(0x8a5a3c));post.position.y=.6;m.add(post);
     const bx=new THREE.Mesh(new THREE.BoxGeometry(.55,.5,.9),mat(0x3b82f6,{metal:.3,rough:.4}));bx.position.y=1.4;m.add(bx);
     const fl=new THREE.Group();fl.position.set(.3,1.4,-.2);m.add(fl);const fm=new THREE.Mesh(new THREE.BoxGeometry(.04,.5,.12),mat(0xe23b3b));fm.position.y=.25;fl.add(fm);fl.rotation.x=extra.done?0:-Math.PI/2;m.userData.flag=fl;}
   m.traverse(o=>{if(o.isMesh)o.castShadow=true});
-  const it={kind,m,x,z,on:true,ph:Math.random()*6,baseY:kind==='flag'||kind==='mail'?0:kind==='flower'?.6:kind==='chick'?.35:kind==='duck'?.45:1,...extra};m.position.set(x,it.baseY,z);scene.add(m);
-  if(kind==='bone'||kind==='flower'||kind==='chick'||kind==='duck'||kind==='mail'&&!extra.done){const beam=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,14,10,1,true),new THREE.MeshBasicMaterial({color:{bone:0xfff3a0,flower:0xff9ec0,chick:0xffe14d,duck:0x7fd3ff,mail:0xffc53d}[kind],transparent:true,opacity:.3,depthWrite:false}));
+  const it={kind,m,x,z,on:true,ph:Math.random()*6,baseY:kind==='flag'||kind==='mail'?0:kind==='flower'?.6:kind==='chick'?.35:kind==='duck'?.45:kind==='cupcake'?.45:1,...extra};m.position.set(x,it.baseY,z);scene.add(m);
+  if(kind==='bone'||kind==='flower'||kind==='chick'||kind==='duck'||kind==='cupcake'||kind==='mail'&&!extra.done){const beam=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,14,10,1,true),new THREE.MeshBasicMaterial({color:{bone:0xfff3a0,flower:0xff9ec0,chick:0xffe14d,duck:0x7fd3ff,cupcake:0xff8fb3,mail:0xffc53d}[kind],transparent:true,opacity:.3,depthWrite:false}));
     beam.position.set(x,7,z);scene.add(beam);it.beam=beam;}
   items.push(it);return it;}
 function spawnQuestItems(id){
@@ -1195,26 +1344,181 @@ function spawnQuestItems(id){
   if(id==='flowers')for(let i=S.q.flowers.n;i<6;i++){const p=randPos(3,70);addItem('flower',p.x,p.z,{q:id});}
   if(id==='walk')[[-50,48],[50,48],[-52,-10],[52,-10]].forEach(([x,z],i)=>addItem('flag',x,z,{fi:i,done:!!S.q.walk.f[i],q:id}));
   if(id==='chicks')for(let i=S.q.chicks.n;i<5;i++){const p=randPos(3,36,FARM.x-12,FARM.z-4);addItem('chick',p.x,p.z,{q:id});}
+  if(id==='cupcakes')for(let i=S.q.cupcakes.n;i<5;i++){const p=randPos(3,42,0,-92);addItem('cupcake',p.x,p.z,{q:id});}
   if(id==='ducks')for(let i=S.q.ducks.n;i<5;i++){const p=randPos(3,34,POND.x+4,POND.z);addItem('duck',p.x,p.z,{q:id});}
-  if(id==='mail')MAILS.forEach((m,i)=>addItem('mail',m.x,m.z,{fi:i,done:!!S.q.mail.f[i],q:id,ry:m.ry}));}
+  if(id==='mail')mailSet().forEach((m,i)=>addItem('mail',m.x,m.z,{fi:i,done:!!S.q.mail.f[i],q:id,ry:m.ry}));}
 function removeItem(it){it.on=false;scene.remove(it.m);if(it.beam)scene.remove(it.beam);}
 function collect(it){
-  if(it.kind==='coin'){S.coins+=5;coinSnd();it.on=false;it.m.visible=false;it.back=clock+6;floatText('+5',it.m.position);}
+  if(it.kind==='coin'){earn(5);coinSnd();it.on=false;it.m.visible=false;it.back=clock+6;floatText('+5',it.m.position);}
   else if(it.kind==='bone'){S.q.bones.n++;removeItem(it);bark();floatText('Bone!',it.m.position);if(S.q.bones.n>=5)toast('All 5 bones found! Go back to Grandpa Joe.');else toast(`Bone ${S.q.bones.n} of 5`);}
   else if(it.kind==='flower'){S.q.flowers.n++;removeItem(it);beep(1200,.15,'triangle',.08,1.5);floatText('Flower!',it.m.position);if(S.q.flowers.n>=6)toast('6 flowers! Bring them to Lily.');else toast(`Flower ${S.q.flowers.n} of 6`);}
   else if(it.kind==='flag'){if(it.done||!S.dogs.length||S.q.walk.s!=='active')return;it.done=true;S.q.walk.f[it.fi]=1;it.m.userData.cloth.material.color.set(0x2fbf8f);jingle();
     const n=qCount('walk');toast(n>=4?'All 4 flags! Go back to Coach Rosa.':`Flag ${n} of 4. Good walk!`);burst(it.m.position.clone().setY(3));}
   else if(it.kind==='chick'){S.q.chicks.n++;removeItem(it);beep(2200,.06,'sine',.05,1.2);setTimeout(()=>beep(2500,.06,'sine',.05,1.2),90);floatText('Peep!',it.m.position);
     toast(S.q.chicks.n>=5?'All 5 chicks found! Go back to Farmer Gus.':`Chick ${S.q.chicks.n} of 5`);}
+  else if(it.kind==='cupcake'){S.q.cupcakes.n++;removeItem(it);beep(1500,.1,'triangle',.06,1.3);floatText('Yum!',it.m.position);toast(S.q.cupcakes.n>=5?'All 5 cupcakes! Bring them to Baker Bea.':`Cupcake ${S.q.cupcakes.n} of 5`);}
   else if(it.kind==='duck'){S.q.ducks.n++;removeItem(it);bark();floatText('Quack!',it.m.position);toast(S.q.ducks.n>=5?'All 5 rubber ducks! Bring them to Captain Mae.':`Rubber duck ${S.q.ducks.n} of 5`);}
   else if(it.kind==='mail'){if(it.done||S.q.mail.s!=='active')return;it.done=true;S.q.mail.f[it.fi]=1;it.m.userData.flag.rotation.x=0;if(it.beam)it.beam.visible=false;jingle();
     const n=qCount('mail');toast(n>=4?'All 4 letters delivered! Go back to Postie Pip.':`Letter ${n} of 4 delivered!`);floatText('Mail!',it.m.position);}
   save();refreshHUD();}
 
+/* ---------- play fetch ---------- */
+// One ball at a time. The ESSAs take turns: one runs to where it lands, carries it back in its mouth, and earns coins.
+const ball={m:null,ph:null,dog:null,t:0,turn:0,a:new THREE.Vector3(),b:new THREE.Vector3()};
+function buildBall(){const g=new THREE.Group();mesh(new THREE.SphereGeometry(.24,16,12),mat(0xff5d8f,{rough:.55}),0,0,0,g);
+  for(const r of[0,Math.PI/2]){const t=mesh(new THREE.TorusGeometry(.243,.03,6,24),mat(0xffe14d),0,0,0,g,false);t.rotation.set(Math.PI/2,r,0);}
+  g.visible=false;scene.add(g);ball.m=g;}
+function ballReset(){if(ball.dog)ball.dog.fetching=false;ball.ph=null;ball.dog=null;if(ball.m)ball.m.visible=false;}
+const canThrow=()=>mode==='play'&&!paused&&!driving&&!inHome&&!ball.ph&&dogsW.length>0;
+function throwBall(){if(!canThrow())return;audio();const P=player.position,a=player.rotation.y,dist=11+Math.random()*4;
+  const to={x:P.x+Math.sin(a)*dist,z:P.z+Math.cos(a)*dist};collide(to,.5);
+  ball.a.set(P.x+Math.sin(a)*.6,1.5,P.z+Math.cos(a)*.6);ball.b.set(to.x,.24,to.z);ball.t=0;ball.ph='fly';
+  const free=dogsW.filter(d=>!d.sniff),list=free.length?free:dogsW,d=list[ball.turn++%list.length];d.sniff=null;d.fetching=true;d.fetchT=0;ball.dog=d;
+  ball.m.position.copy(ball.a);ball.m.visible=true;player.userData.throwT=.35;beep(420,.16,'sine',.05,2.4);}
+function ballUpdate(dt){if(!ball.ph)return;const d=ball.dog;if(!d||!dogsW.includes(d)||driving||inHome)return ballReset();ball.t+=dt;const m=ball.m;
+  if(ball.ph==='fly'){const u=Math.min(1,ball.t/.85);m.position.lerpVectors(ball.a,ball.b,u);m.position.y+=Math.sin(u*Math.PI)*3.4;m.rotation.x+=dt*14;
+    if(u>=1){ball.ph='ground';ball.t=0;beep(900,.06,'sine',.04,.6);}}
+  else if(ball.ph==='ground'){m.position.y=.24+Math.abs(Math.sin(ball.t*9))*.45*Math.max(0,1-ball.t*1.4);}
+  else if(ball.ph==='carry'){d.g.updateMatrixWorld(true);d.head.localToWorld(m.position.set(0,d.tier===1?-.2:-.14,d.tier===1?.72:.5));}}
+// steer the fetching dog; returns its speed so the walk animation can use it
+function fetchMove(d,dt){const p=d.g.position,P=player.position;d.fetchT+=dt;const back=ball.ph==='carry',tg=back?P:ball.b;
+  let dx=tg.x-p.x,dz=tg.z-p.z,dist=Math.hypot(dx,dz),v=0;const stop=back?1.7:.6;
+  if(dist>stop){v=Math.min(11,(dist-stop)*5+3);p.x+=dx/dist*v*dt;p.z+=dz/dist*v*dt;collide(p,.4);turnTo(d.g,dx,dz,dt*10);}
+  if(ball.ph==='ground'&&(dist<1||d.fetchT>9)){if(dist>=1)p.set(ball.b.x-dx/dist*.6,0,ball.b.z-dz/dist*.6);ball.ph='carry';ball.t=0;d.fetchT=0;bark();}
+  else if(back&&(dist<2||d.fetchT>14))fetchDone(d);
+  return v;}
+function fetchDone(d){ballReset();S.st.fetch++;earn(3);coinSnd();hearts(d.g.position.clone().setY(2));d.jump=1;floatText('+3',d.g.position);
+  toast(['Good catch, ','Nice fetch, ','Woohoo, ','Great job, '][S.st.fetch%4]+d.name+'!');refreshHUD();}
+function turnTo(g,dx,dz,k){let da=Math.atan2(dx,dz)-g.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));g.rotation.y+=da*Math.min(1,k);}
+
+/* ---------- sniff and dig ---------- */
+// Hidden treasure patches. When you walk near one with an ESSA, the ESSA runs over and sniffs, and the patch sparkles. Tap Dig.
+const digs=[],DIG_N=9,DIG_SEE=11;
+function placeDig(s){for(let i=0;i<60;i++){const p=randPos(2.5,WB-6);if(onRoad(p.x,p.z,2)||Math.hypot(p.x,p.z-18)<16||Math.hypot(p.x-HOME.x,p.z-HOME.z)<10)continue;s.x=p.x;s.z=p.z;break;}
+  s.g.position.set(s.x,0,s.z);s.g.visible=false;s.found=false;s.on=true;}
+function buildDigs(){const dirt=mat(0x8a5a3c,{flat:true}),peb=mat(0xb89a7a,{flat:true});
+  for(let i=0;i<DIG_N;i++){const g=new THREE.Group();scene.add(g);mesh(new THREE.SphereGeometry(.75,12,8),dirt,0,0,0,g,false).scale.set(1,.26,1);
+    for(const [x,z] of[[.5,.3],[-.45,.4],[.1,-.55]])mesh(new THREE.IcosahedronGeometry(.11,0),peb,x,.08,z,g,false);
+    const sp=sprite('✦',{w:96,h:96,size:84,fg:'#ffe14d',stroke:'#fff'});sp.scale.set(.9,.9,1);sp.position.y=1.2;g.add(sp);
+    const s={g,sp,x:0,z:0,ph:i};placeDig(s);digs.push(s);}}
+function digUpdate(dt,P){const sniffers=driving||inHome?[]:dogsW.filter(d=>!d.fetching);
+  for(const s of digs){if(!s.on){if(clock>s.back)placeDig(s);continue;}
+    const d2=(P.x-s.x)**2+(P.z-s.z)**2;
+    if(!s.found&&sniffers.length&&d2<DIG_SEE*DIG_SEE){const d=sniffers.find(x=>!x.sniff)||sniffers[0];s.found=true;s.g.visible=true;d.sniff=s;bark();
+      toast(S.st.dig?`${d.name} smells something! Tap Dig.`:`${d.name} smells buried treasure! Walk over and tap Dig.`);}
+    if(s.found){s.sp.position.y=1.2+Math.sin(clock*3+s.ph)*.15;const k=.75+Math.abs(Math.sin(clock*4+s.ph))*.35;s.sp.scale.set(k,k,1);}}
+  for(const d of dogsW)if(d.sniff&&(!d.sniff.on||(P.x-d.sniff.x)**2+(P.z-d.sniff.z)**2>18*18))d.sniff=null;}
+function sniffMove(d,dt){const p=d.g.position,s=d.sniff,dx=s.x+.9-p.x,dz=s.z-p.z,dist=Math.hypot(dx,dz);let v=0;
+  if(dist>.4){v=Math.min(10,dist*4+2);p.x+=dx/dist*v*dt;p.z+=dz/dist*v*dt;collide(p,.4);turnTo(d.g,dx,dz,dt*8);}else turnTo(d.g,s.x-p.x,s.z-p.z,dt*6);
+  return v;}
+function digAt(s){if(!s.on)return;s.on=false;s.back=clock+25;s.g.visible=false;S.st.dig++;
+  const d=dogsW.find(x=>x.sniff===s)||dogsW[0];dogsW.forEach(x=>{if(x.sniff===s)x.sniff=null;});if(d)d.jump=1;
+  const at=new THREE.Vector3(s.x,.6,s.z);burst(at,40,[0x8a5a3c,0x6b4220,0xb89a7a,0x7cc45a]);if(SET.sound&&ac&&musicBus())thump(.4);
+  const left=DIG_GEAR.filter(id=>!owns(id)),r=Math.random();
+  // the third dig always finds a secret treasure, so new players learn they exist
+  if(left.length&&(r<.12||(S.st.dig===3&&left.length===DIG_GEAR.length))){const id=left[Math.floor(Math.random()*left.length)];giveGear(id,false);
+    jingle();burst(at.setY(1.5),70);save();refreshHUD();return openTreasure(id,d);}
+  const n=r<.3?25:[8,10,12][Math.floor(Math.random()*3)];earn(n);coinSnd();setTimeout(coinSnd,120);floatText('+'+n,at);
+  toast(n>=25?`A treasure chest! ${d?d.name+' found':'You found'} 25 paw coins!`:`${d?d.name+' dug up':'You dug up'} ${n} paw coins!`);save();refreshHUD();}
+let treasureDog=null;
+function openTreasure(id,d){const G=GEAR[id],type=d?d.type:pvDogType(),n=DIG_GEAR.filter(owns).length;treasureDog=d?d.idx:null;
+  openSheet(`<div class="tag">Secret treasure ${n} of ${DIG_GEAR.length}</div><h2>${d?esc(d.name)+' found treasure!':'You found treasure!'}</h2><div class="pvbox"></div>
+    <div class="card"><div class="tag">${SLOTNAME[G.slot]}</div><h3>${G.name}</h3><p>${G.desc}</p></div>
+    <div class="row">${S.dogs.length?'<button class="btn" data-act="wearTreasure" data-arg="'+id+'">Put it on</button>':''}<button class="btn alt" data-act="close">Keep it</button></div>`,'shop');
+  pvShow('t:'+type+':'+id,()=>{const dd=buildDog(type);if(G.slot==='leash'){dressWith(dd,{neck:'collar_pink'});leashPreview(dd,G);}else dressWith(dd,{[G.slot]:id});return dd;},1.1);mountBox();}
+
+
+/* ---------- Trick Show (Sunny Hills) ---------- */
+// A copy-the-tricks memory game: Ms. Twinkle shows a line of tricks, then you tap them back in the same order.
+const TRICKS=[['spin','🌀 Spin',523],['jump','⬆️ Jump',659],['sit','🐾 Sit',784],['wave','👋 Wave',988]],TS_MAX=8;let TS=null;
+const tsDog=()=>S.dogs.find(x=>x.out!==false);
+function openTrickShow(){const info=tsDog();
+  if(!info)return openSheet(`<div class="tag">Ms. Twinkle</div><h2>The Sunny Hills Trick Show</h2><p>${S.dogs.length?'Bring an ESSA along from your toy box to join the show!':'Every ESSA can be a star! Come back when you have a plush pup.'}</p><div class="row"><button class="btn" data-act="close">OK</button></div>`);
+  openSheet(`<div class="tag">Ms. Twinkle</div><h2>The Sunny Hills Trick Show</h2><p>Hello, superstar! ${esc(info.name)} will do some tricks. Watch closely, then tap the same tricks in the same order. Every round you remember earns 5 paw coins!</p>
+    ${S.st.showBest?`<p class="keys">Your best show: ${S.st.showBest} of ${TS_MAX} rounds</p>`:''}<div class="row"><button class="btn" data-act="tsStart">Start the show!</button><button class="btn alt" data-act="close">Maybe later</button></div>`);}
+function tsSheet(){const info=tsDog();
+  openSheet(`<div class="tag">Trick Show · Round ${TS.round} of ${TS_MAX}</div><h2 id="tsMsg">Watch ${esc(info.name)}!</h2><div class="pvbox"></div>
+    <div class="trks">${TRICKS.map(([k,l])=>`<button class="trk" data-act="tsTap" data-arg="${k}" disabled>${l}</button>`).join('')}</div>
+    <p class="keys">Coins so far: ${(TS.round-1)*5}</p>`,'shop');
+  pvShow('ts:'+TS.id+':'+TS.round,()=>{const d=buildDog(info.type);dressWith(d,info.gear||{});return d;},1);mountBox();PV.still=true;PV.dog.g.rotation.y=.45;}
+const tsBtn=k=>sheet.querySelector(`.trk[data-arg="${k}"]`);
+function tsDo(k){const B=tsBtn(k),T=TRICKS.find(t=>t[0]===k);if(B){B.classList.add('lit');setTimeout(()=>B.classList.remove('lit'),520);}if(PV)PV.trick={k,t:0};
+  if(SET.sound){audio();if(ac&&musicBus())pluck(Math.round(69+12*Math.log2(T[2]/440)),.07,.8);}}
+function tsPlay(){const id=TS.id,round=TS.round;TS.ph='watch';TS.i=0;
+  TS.seq.forEach((k,i)=>setTimeout(()=>{if(TS&&TS.id===id&&TS.round===round&&!wrap.hidden)tsDo(k);},700+i*850));
+  setTimeout(()=>{if(!TS||TS.id!==id||TS.round!==round||wrap.hidden)return;TS.ph='you';$('tsMsg').textContent='Your turn!';sheet.querySelectorAll('.trk').forEach(b=>b.disabled=false);},700+TS.seq.length*850);}
+function tsEnd(win){const done=TS.round-1+(win?1:0),c=done*5+(win?20:0);TS.ph='over';S.st.shows++;if(done>S.st.showBest)S.st.showBest=done;if(c)earn(c);save();
+  const info=tsDog();sheet.querySelectorAll('.trk').forEach(b=>b.disabled=true);
+  if(win){jingle();setTimeout(jingle,450);burst(player.position.clone().setY(2),80);}
+  openSheet(`<div class="tag">Trick Show</div><h2>${win?'A perfect show!':done?'Take a bow!':'Oops!'}</h2>
+    <p>${win?`${esc(info?info.name:'Your ESSA')} did all ${TS_MAX} rounds! The crowd goes wild. You earned ${c} paw coins, with a 20 coin superstar bonus.`:done?`You remembered ${done} round${done>1?'s':''} and earned ${c} paw coins. Great show!`:'That was a tricky one. Try again!'}</p>
+    <p class="keys">Best show: ${S.st.showBest} of ${TS_MAX} rounds</p><div class="row"><button class="btn" data-act="tsStart">Play again</button><button class="btn alt" data-act="close">Done</button></div>`);
+  TS=null;refreshHUD();}
+const TS_ACTS={
+  tsStart:()=>{if(!tsDog())return openTrickShow();TS={id:Math.random(),round:1,seq:[TRICKS[Math.floor(Math.random()*4)][0]],ph:'watch',i:0};tsSheet();tsPlay();},
+  tsTap:k=>{if(!TS||TS.ph!=='you')return;tsDo(k);
+    if(k!==TS.seq[TS.i]){TS.ph='over';const B=tsBtn(k);if(B)B.classList.add('bad');$('tsMsg').textContent='Oops!';beep(220,.3,'triangle',.06,.7);setTimeout(()=>{if(TS)tsEnd(false);},900);return;}
+    TS.i++;if(TS.i<TS.seq.length)return;
+    TS.ph='wait';if(TS.round>=TS_MAX){setTimeout(()=>{if(TS)tsEnd(true);},700);return;}
+    $('tsMsg').textContent=['Great!','Wonderful!','Amazing!','Super!'][TS.round%4];coinSnd();
+    setTimeout(()=>{if(!TS||wrap.hidden)return;TS.round++;TS.seq.push(TRICKS[Math.floor(Math.random()*4)][0]);tsSheet();tsPlay();},900);}
+};
+
+/* ---------- sticker book ---------- */
+const ownAll=list=>list.every(has),helped=()=>Object.keys(Q).filter(k=>S.q[k].s==='done'||S.q[k].rep).length;
+const cnt=(k,n)=>()=>[S.st[k],n];
+const STICKERS=[
+  {id:'first',ic:'🐶',name:'First friend',hint:'Bring home your first ESSA',c:10,ok:()=>S.dogs.length>=1},
+  {id:'pack3',ic:'🐾',name:'Pup pack',hint:'Have 3 ESSAs',c:20,ok:()=>S.dogs.length>=3,pr:()=>[S.dogs.length,3]},
+  {id:'pack6',ic:'🧸',name:'Big family',hint:'Have 6 ESSAs',c:30,ok:()=>S.dogs.length>=6,pr:()=>[S.dogs.length,6]},
+  {id:'pack10',ic:'🌈',name:'Plush paradise',hint:'Have 10 ESSAs',c:50,ok:()=>S.dogs.length>=10,pr:()=>[S.dogs.length,10]},
+  {id:'valu',ic:'🛒',name:'ValuMart set',hint:'Own all 3 ValuMart pups',c:20,ok:()=>ownAll(STORES.valu.dogs)},
+  {id:'pawsh',ic:'🎀',name:'Pawsh set',hint:'Own all 3 Pawsh & Co. pups',c:30,ok:()=>ownAll(STORES.pawsh.dogs)},
+  {id:'lux',ic:'💎',name:'Le Chien collection',hint:'Own all 7 Le Chien pups',c:80,ok:()=>ownAll(STORES.lux.dogs)},
+  {id:'lucy',ic:'💛',name:'Lucy\'s best friend',hint:'Bring home the Beagle from Le Chien',c:20,ok:()=>has('beagle')},
+  {id:'hug10',ic:'🤗',name:'Cuddle buddy',hint:'Hug your ESSAs 10 times',c:10,ok:()=>S.st.hug>=10,pr:cnt('hug',10)},
+  {id:'hug100',ic:'💞',name:'Hug champion',hint:'Hug your ESSAs 100 times',c:30,ok:()=>S.st.hug>=100,pr:cnt('hug',100)},
+  {id:'fetch10',ic:'🎾',name:'Fetch fan',hint:'Play fetch 10 times',c:15,ok:()=>S.st.fetch>=10,pr:cnt('fetch',10)},
+  {id:'fetch50',ic:'⚾',name:'Fetch superstar',hint:'Play fetch 50 times',c:40,ok:()=>S.st.fetch>=50,pr:cnt('fetch',50)},
+  {id:'dig5',ic:'👃',name:'Good nose',hint:'Dig up 5 treasures',c:15,ok:()=>S.st.dig>=5,pr:cnt('dig',5)},
+  {id:'dig25',ic:'🗺️',name:'Treasure hunter',hint:'Dig up 25 treasures',c:40,ok:()=>S.st.dig>=25,pr:cnt('dig',25)},
+  {id:'secrets',ic:'🏴‍☠️',name:'Pirate pup',hint:'Find all 5 secret treasures',c:50,ok:()=>DIG_GEAR.every(owns),pr:()=>[DIG_GEAR.filter(owns).length,DIG_GEAR.length]},
+  {id:'coins500',ic:'💰',name:'Piggy bank',hint:'Earn 500 paw coins',c:20,ok:()=>S.st.coins>=500,pr:cnt('coins',500)},
+  {id:'coins2000',ic:'🏅',name:'Coin collector',hint:'Earn 2,000 paw coins',c:50,ok:()=>S.st.coins>=2000,pr:cnt('coins',2000)},
+  {id:'drive',ic:'🚗',name:'Road trip',hint:'Drive all over town',c:20,ok:()=>S.st.drive>=1500,pr:()=>[Math.floor(S.st.drive/15),100]},
+  {id:'gear10',ic:'👗',name:'Fashion pup',hint:'Own 10 accessories',c:20,ok:()=>S.owned.length>=10,pr:()=>[S.owned.length,10]},
+  {id:'help3',ic:'🤝',name:'Good neighbor',hint:'Help 3 neighbors',c:20,ok:()=>helped()>=3,pr:()=>[helped(),3]},
+  {id:'help6',ic:'⭐',name:'Town hero',hint:'Help every neighbor with a quest',c:40,ok:()=>helped()>=Object.keys(Q).length,pr:()=>[helped(),Object.keys(Q).length]},
+  {id:'again',ic:'🔁',name:'Helping hand',hint:'Help a neighbor a second time',c:15,ok:()=>S.st.again>=1},
+  {id:'hills',ic:'🏘️',name:'New neighbors',hint:'Visit Sunny Hills down Hill Rd',c:10,ok:()=>S.st.hills>0},
+  {id:'trick1',ic:'🎭',name:'Showtime',hint:'Play the Trick Show in Sunny Hills',c:10,ok:()=>S.st.shows>0},
+  {id:'trick5',ic:'🌟',name:'Show star',hint:'Remember 5 rounds in the Trick Show',c:30,ok:()=>S.st.showBest>=5,pr:()=>[S.st.showBest,5]},
+  {id:'trick8',ic:'🎪',name:'Perfect show',hint:'Finish all 8 rounds of the Trick Show',c:50,ok:()=>S.st.showBest>=8,pr:()=>[S.st.showBest,8]},
+  {id:'night',ic:'🌙',name:'Stargazer',hint:'Stay out until the stars come out',c:10,ok:()=>S.st.night>0},
+  {id:'show',ic:'🏆',name:'Best in Show',hint:'Win the Grand Plush Show',c:30,ok:()=>S.q.show.s==='done'},
+  {id:'home',ic:'🏡',name:'Home sweet home',hint:'Buy the Dream Home',c:20,ok:()=>S.home.own},
+  {id:'decor',ic:'🛋️',name:'Decorator',hint:'Put 8 things in your house',c:30,ok:()=>Object.keys(S.home.f).length>=8,pr:()=>[Object.keys(S.home.f).length,8]}
+];
+const stkQ=[];let stkBusy=false;
+// award new stickers; quiet (on loading an old save) sums up a big batch in one message instead of a long line of pop-ups
+function checkStickers(quiet){if(mode!=='play')return;const got=STICKERS.filter(k=>!S.stk.includes(k.id)&&k.ok());if(!got.length)return;
+  got.forEach(k=>{S.stk.push(k.id);earn(k.c);});save();
+  if(quiet&&got.length>2){const c=got.reduce((a,k)=>a+k.c,0);setTimeout(()=>toast(`You earned ${got.length} stickers for everything you've done! +${c} paw coins. See the sticker book in the pause menu.`),2800);}
+  else{stkQ.push(...got);stkNext();}}
+function stkNext(){if(stkBusy||!stkQ.length)return;const k=stkQ.shift(),e=$('stkPop');stkBusy=true;
+  e.innerHTML=`<span class="ic">${k.ic}</span><span><b>New sticker: ${k.name}!</b><small>+${k.c} paw coins</small></span>`;e.classList.remove('off');
+  if(SET.sound){audio();if(ac&&musicBus())[0,7,12,16].forEach((x,i)=>setTimeout(()=>pluck(79+x,.05,.9),i*90));}
+  setTimeout(()=>{e.classList.add('off');setTimeout(()=>{stkBusy=false;stkNext();},350);},2800);}
+function openStickers(){const n=S.stk.length,N=STICKERS.length;
+  openSheet(`<div class="tag">Sticker book · ${n} of ${N}</div><h2>My stickers</h2><div class="meter" role="img" aria-label="${n} of ${N} stickers"><i style="width:${n/N*100}%"></i></div>
+    <div class="stickers">${STICKERS.map(k=>{const on=S.stk.includes(k.id),p=!on&&k.pr&&k.pr();
+      return`<div class="stk ${on?'on':''}"><span class="ic" aria-hidden="true">${k.ic}</span><b>${k.name}</b><small>${k.hint}${on?'':p?` · ${Math.min(p[0],p[1])}/${p[1]}`:''}</small><small>${on?'Got it!':`+${k.c} coins`}</small></div>`;}).join('')}</div>
+    <div class="row"><button class="btn" data-act="${mode==='play'?'pause':'close'}">Back</button></div>`);}
+
 /* ---------- effects ---------- */
 const fx=[];
-function burst(pos,n=50){const cols=[0xff5d8f,0xffc53d,0x2fbf8f,0x7b4fd6,0x5cc8f0];const geo=new THREE.PlaneGeometry(.18,.28);
-  for(let i=0;i<n;i++){const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:cols[i%5],side:THREE.DoubleSide}));m.position.copy(pos);scene.add(m);
+function burst(pos,n=50,cols=[0xff5d8f,0xffc53d,0x2fbf8f,0x7b4fd6,0x5cc8f0]){const geo=new THREE.PlaneGeometry(.18,.28);
+  for(let i=0;i<n;i++){const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:cols[i%cols.length],side:THREE.DoubleSide}));m.position.copy(pos);scene.add(m);
     fx.push({m,v:new THREE.Vector3((Math.random()-.5)*8,4+Math.random()*6,(Math.random()-.5)*8),life:2,spin:Math.random()*10});}}
 function hearts(pos){for(let i=0;i<6;i++){const s=sprite('♥',{w:96,h:96,size:80,fg:'#ff5d8f',stroke:'#fff'});s.scale.set(.7,.7,1);s.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*1.2,Math.random()*.5,(Math.random()-.5)*1.2));scene.add(s);
   fx.push({m:s,v:new THREE.Vector3(0,1.5+Math.random(),0),life:1.4,sprite:true});}}
@@ -1229,16 +1533,16 @@ const wrap=$('wrap'),sheet=$('sheet'),actBtn=$('act');let paused=true,mode='titl
 function openSheet(h,cls=''){if(PV)PV.on=false;sheet.className='sheet '+cls;sheet.innerHTML=h;wrap.hidden=false;paused=true;joyReset();const b=sheet.querySelector('input,.btn');b&&b.focus({preventScroll:true});}
 function closeSheet(){wrap.hidden=true;paused=mode!=='play';if(PV)PV.on=false;}
 let toastT=0;function toast(t){const e=$('toast');e.textContent=t;e.classList.remove('off');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.add('off'),2600);}
-function refreshHUD(){$('coinN').textContent=S.coins;let t;
+function refreshHUD(){checkStickers();$('coinN').textContent=S.coins;let t;
   const step=t=>{const p=minPrice(t),nm=STORES[storeOfTier(t)].name;return S.coins>=p?`You have enough coins! Pick an ESSA at ${nm}${nm.endsWith('.')?'':'.'}`:`Collect paw coins for an ESSA at ${nm} (${S.coins}/${p}).`;};
   if(!hasTier(1))t=step(1);else if(!hasTier(2))t=step(2);else if(!hasTier(3))t=step(3);
   else if(S.q.show.s!=='done')t=showReqs().every(x=>x[0])?'Your pup is ready! Talk to the judge outside Le Chien.':'Help the neighbors to win a cape, a flower crown and a rainbow leash, then enter the Plush Show.';
-  else t=S.home.own?'Best in Show! Decorate your Dream Home and explore with your pups.':`Best in Show! Save ${HOME.price} paw coins for the Dream Home on Meadow Ln (the heart on your map).`;
+  else t=S.home.own?(S.stk.length<STICKERS.length?`Best in Show! Fill your sticker book (${S.stk.length} of ${STICKERS.length}) and decorate your Dream Home.`:'You got every sticker! You are a Puppy Quest superstar.'):`Best in Show! Save ${HOME.price} paw coins for the Dream Home on Meadow Ln (the heart on your map).`;
   $('goalT').textContent=t;
   const act=Object.keys(Q).filter(k=>S.q[k].s==='active').map(k=>`${Q[k].who}: ${qCount(k)}/${Q[k].need} ${Q[k].item}`);
   $('goalQ').textContent=act.join(' · ');
   for(const id in Q){const st=S.q[id];npcs[id].mk.visible=st.s==='new'?(!Q[id].needDog||S.dogs.length>0):st.s==='active'&&qCount(id)>=Q[id].need;}
-  npcs.judge.mk.visible=S.q.show.s!=='done'&&hasTier(3);}
+  npcs.judge.mk.visible=S.q.show.s!=='done'&&hasTier(3);npcs.trick.mk.visible=!S.st.shows&&S.dogs.length>0;}
 /* 3D preview for shops and the toy box */
 let PV=null;
 function pv(){if(PV)return PV;const c=document.createElement('canvas');
@@ -1247,7 +1551,12 @@ function pv(){if(PV)return PV;const c=document.createElement('canvas');
   const cam=new THREE.PerspectiveCamera(30,1.5,.1,50);cam.position.set(0,1.7,5);cam.lookAt(0,.95,0);
   const ped=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.5,.16,40),mat(0xffffff,{rough:.7}));ped.position.y=-.08;sc.add(ped);
   return PV={c,r,sc,cam,dog:null,type:null,on:false,thumbs:{}};}
-function pvShow(key,build,ty=.95){const P=pv();P.cam.lookAt(0,ty,0);if(P.key===key)return;if(P.dog)P.sc.remove(P.dog.g);P.dog=build();P.key=key;P.dog.g.rotation.y=.7;P.sc.add(P.dog.g);}
+function pvShow(key,build,ty=.95){const P=pv();P.cam.lookAt(0,ty,0);P.still=false;P.trick=null;if(P.key===key)return;if(P.dog)P.sc.remove(P.dog.g);P.dog=build();P.key=key;P.dog.g.rotation.y=.7;P.sc.add(P.dog.g);}
+// trick show moves in the preview box
+function pvTrick(dt){const P=PV,d=P.dog,T=P.trick;if(!T||!d.body)return;T.t+=dt;const u=Math.min(1,T.t/.75),b=Math.sin(u*Math.PI);
+  d.g.rotation.y=.45+(T.k==='spin'?u*Math.PI*2:0);d.g.position.y=T.k==='jump'?b*.9:0;d.body.rotation.x=T.k==='sit'?-b*.45:0;
+  if(d.legs[0])d.legs[0].rotation.x=T.k==='wave'?-b*1.7+Math.sin(T.t*30)*.25*b:T.k==='jump'?-b*.5:0;if(d.legs[1])d.legs[1].rotation.x=T.k==='jump'?-b*.5:0;
+  if(u>=1){P.trick=null;d.g.rotation.y=.45;d.g.position.y=0;d.body.rotation.x=0;d.legs.forEach(l=>l.rotation.x=0);}}
 function pvSet(type){pvShow('t:'+type,()=>buildDog(type));}
 function mountBox(){const box=sheet.querySelector('.pvbox');if(!box)return;const P=pv();box.prepend(P.c);pvSize(box.clientWidth||320,box.clientHeight||213);P.on=true;}
 function pvSize(w,h){const P=pv();P.r.setSize(w,h,false);P.cam.aspect=w/h;P.cam.updateProjectionMatrix();}
@@ -1301,6 +1610,8 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function intro(){openSheet(`<div class="tag">How to play</div><h2>Puppy Quest</h2>
   <p>Collect gold paw coins and buy ESSAs (emotional support stuffed animals) from three stores. Each store's plush dog is more realistic than the last. Help the neighbors to win gear for your pups. Can you win Best in Show?</p>
   <p class="keys">Walk with the left joystick. Turn the camera with the purple eye joystick, or drag on the town. On a keyboard use WASD to walk and Q/E to turn. Tap the yellow button to shop, talk and hug your ESSA.</p>
+  <p class="keys">Tap the pink ball button to play fetch (or press T). When your ESSA sniffs out a sparkly patch, walk over and tap Dig for buried treasure. There are 5 secret treasures to find!</p>
+  <p class="keys">Earn stickers for hugs, fetch, digging, helping neighbors and more. Each sticker gives paw coins. Find your sticker book in the pause menu.</p>
   <p class="keys">Fetch &amp; Fancy sells accessories. Tap Dress up in the toy box to change what each ESSA wears, and use My look in the pause menu to change your character.</p>
   <p class="keys">Every store has its own ESSAs. Use the arrows to look at each one before you buy. Your ESSAs live in the toy box, where you pick who comes along.</p>
   <p class="keys">Save up for the Dream Home on Meadow Ln (the heart on the map). Inside, buy furniture from the catalog by the door, tap Move to carry furniture to a new spot, and pick your wallpaper and floor.</p>
@@ -1322,8 +1633,8 @@ function startGame(i,state){if(driving)exitCar(true);if(inHome)exitHome(true);sl
   for(const it of items.slice())if(it.kind!=='coin'){removeItem(it);items.splice(items.indexOf(it),1);}
   for(const id of Object.keys(Q))if(S.q[id].s==='active')spawnQuestItems(id);
   const [px,pz]=S.pos||[0,-12];player.position.set(px,0,pz);player.rotation.y=0;
-  respawnDogs();
-  camera.position.set(px,20,pz+20);look.set(px,1,pz);mode='play';document.body.classList.remove('in-title');$('title').hidden=true;closeSheet();save();refreshHUD();
+  respawnDogs();ballReset();digs.forEach(placeDig);
+  camera.position.set(px,20,pz+20);look.set(px,1,pz);mode='play';document.body.classList.remove('in-title');$('title').hidden=true;closeSheet();checkStickers(true);save();refreshHUD();
   toast(S.dogs.length?`Welcome back! ${S.dogs[0].name} missed you.`:'Find gold paw coins to buy your first ESSA!');
   if(!S.home.own&&S.dogs.length)setTimeout(()=>{if(mode==='play'&&!S.home.own&&wrap.hidden)toast('Psst! A Dream Home is for sale on Meadow Ln. Look for the heart on your map.');},5000);}
 function goTitle(){save();mode='title';closeSheet();document.body.classList.add('in-title');$('title').hidden=false;refreshTitle();}
@@ -1349,24 +1660,32 @@ const ACTS={
   home:type=>{const dg=DOGS[type];if(S.coins<dg.price||has(type))return closeSheet();const name=($('dogName').value.trim()||dg.def).slice(0,12);
     S.coins-=dg.price;const outs=S.dogs.filter(x=>x.out!==false);let msg='';if(outs.length>=4){outs[0].out=false;msg=` ${outs[0].name} went to the toy box.`;}
     S.dogs.push({type,name,out:true});respawnDogs();save();const d=dogsW[dogsW.length-1];
-    closeSheet();jingle();setTimeout(bark,500);burst(d.g.position.clone().setY(1.5));hearts(d.g.position.clone().setY(2));toast(`${name} joined your family!${msg}`);refreshHUD();},
+    closeSheet();jingle();setTimeout(bark,500);burst(d.g.position.clone().setY(1.5));hearts(d.g.position.clone().setY(2));toast(`${name} joined your family!${msg}`);refreshHUD();
+    if(S.dogs.length===1)setTimeout(()=>{if(mode==='play')toast(`Tap the pink ball to play fetch with ${name}! ESSAs can also sniff out buried treasure.`);},3200);},
   qstart:id=>{S.q[id].s='active';spawnQuestItems(id);save();closeSheet();toast(`Quest started: ${Q[id].who}`);refreshHUD();},
-  qdone:id=>{S.q[id].s='done';giveGear(Q[id].reward,true);S.coins+=20;save();dressAll();items.filter(i=>i.q===id&&i.on).forEach(removeItem);
-    closeSheet();jingle();burst(player.position.clone().setY(2));toast(`You got ${Q[id].rewardName}! Change outfits in the toy box.`);refreshHUD();},
-  show:()=>{S.q.show.s='done';const d=dogsW.find(x=>x.tier===3)||dogsW[0];if(!owns('crown'))S.owned.push('crown');if(d)S.dogs[d.idx].gear.head='crown';S.coins+=100;save();dressAll();
+  qdone:id=>{const st=S.q[id];if(st.s!=='active')return;st.s='done';if(st.rep){earn(30);S.st.again++;}else{giveGear(Q[id].reward,true);earn(20);}save();dressAll();items.filter(i=>i.q===id&&i.on).forEach(removeItem);
+    closeSheet();jingle();burst(player.position.clone().setY(2));toast(st.rep?'You earned 30 paw coins. Thank you for helping!':`You got ${Q[id].rewardName}! Change outfits in the toy box.`);refreshHUD();},
+  qagain:id=>{const st=S.q[id];if(st.s!=='done')return;st.s='active';st.rep=(st.rep||0)+1;if(st.f)st.f=st.f.map(()=>0);else st.n=0;
+    items.filter(i=>i.q===id).forEach(i=>{removeItem(i);items.splice(items.indexOf(i),1);});spawnQuestItems(id);save();closeSheet();toast(`Quest started again: ${Q[id].who}`);refreshHUD();},
+  show:()=>{S.q.show.s='done';const d=dogsW.find(x=>x.tier===3)||dogsW[0];if(!owns('crown'))S.owned.push('crown');if(d)S.dogs[d.idx].gear.head='crown';earn(100);save();dressAll();
     jingle();setTimeout(jingle,500);burst(player.position.clone().setY(2),120);if(d){hearts(d.g.position.clone().setY(2));d.jump=1;}
-    openSheet(`<div class="tag">The Grand Plush Show</div><h2>Best in Show!</h2><p>${esc(d?d.name:'Your pup')} won first prize and a golden crown! You also won 100 paw coins.</p><p>Thanks for playing Puppy Quest. Tell Claude what to add next!</p><div class="row"><button class="btn" data-act="close">Woohoo!</button></div>`);refreshHUD();},
+    openSheet(`<div class="tag">The Grand Plush Show</div><h2>Best in Show!</h2><p>${esc(d?d.name:'Your pup')} won first prize and a golden crown! You also won 100 paw coins.</p><p>Keep playing to fill your sticker book, dig up secret treasures and decorate your Dream Home!</p><div class="row"><button class="btn" data-act="close">Woohoo!</button></div>`);refreshHUD();},
   pause:()=>openSheet(`<div class="tag">Slot ${slot}</div><h2>Paused</h2>
-    <div class="tmenu" style="max-width:none"><button class="btn" data-act="close">Resume</button><button class="btn alt" data-act="saveNow">Save game</button>${S.home.own&&!inHome?'<button class="btn alt" data-act="goHome">Go to my house</button>':''}
+    <div class="tmenu" style="max-width:none"><button class="btn" data-act="close">Resume</button><button class="btn alt" data-act="saveNow">Save game</button><button class="btn alt" data-act="stickers">Sticker book · ${S.stk.length} of ${STICKERS.length}</button>${S.home.own&&!inHome?'<button class="btn alt" data-act="goHome">Go to my house</button>':''}
     <div class="row"><button class="btn alt" data-act="box">Toy box</button><button class="btn alt" data-act="look">My look</button><button class="btn alt" data-act="settings">Settings</button><button class="btn alt" data-act="help">How to play</button></div>
     <button class="btn warn" data-act="quit">Save and quit to title</button></div>`),
   saveNow:()=>{const ok=save();closeSheet();toast(ok?`Game saved in slot ${slot}`:'Could not save. This browser is blocking saved games.');if(ok)tone(784,.12,'triangle',.08);},
   quit:goTitle,
+  stickers:openStickers,
+  wearTreasure:id=>{const G=GEAR[id];if(!G||!owns(id))return closeSheet();if(G.slot==='leash')S.leash=id;
+    else{const info=S.dogs[treasureDog]||S.dogs.find(x=>x.out!==false)||S.dogs[0];if(info){info.gear=info.gear||{};info.gear[G.slot]=id;}}
+    dressAll();save();closeSheet();toast(`Looking good in the ${G.name}!`);},
   settings:()=>openSheet(`<h2>Settings</h2>
     <div class="set">Sound effects<button class="btn ${SET.sound?'':'alt'}" data-act="tog" data-arg="sound" aria-pressed="${SET.sound}">${onOff(SET.sound)}</button></div>
     <div class="set">Music<button class="btn ${SET.music?'':'alt'}" data-act="tog" data-arg="music" aria-pressed="${SET.music}">${onOff(SET.music)}</button></div>
     <div class="set">Song<button class="btn alt" data-act="song">${(TRACKS[SET.track]||TRACKS[0]).name} ›</button></div>
     ${fsOK?`<div class="set">Full screen<button class="btn ${isFs()?'':'alt'}" data-act="fs">${onOff(isFs())}</button></div>`:`<p class="keys">Full screen is blocked in this window. For full screen, open the game link in your phone's web browser (like Chrome) and tap the full screen button.</p>`}
+    <div class="set">Day and night<button class="btn ${SET.daynight?'':'alt'}" data-act="tog" data-arg="daynight">${onOff(SET.daynight)}</button></div>
     <div class="set">Camera follows behind you<button class="btn ${SET.autocam?'':'alt'}" data-act="tog" data-arg="autocam">${onOff(SET.autocam)}</button></div>
     <div class="set">Walk joystick side<button class="btn alt" data-act="tog" data-arg="lefty">${SET.lefty?'Right':'Left'}</button></div>
     <div class="row"><button class="btn alt" data-act="${mode==='play'?'pause':'close'}">Back</button></div>`),
@@ -1385,11 +1704,11 @@ const ACTS={
     <div class="row"><button class="btn warn" data-act="delYes" data-arg="${i}">Yes, delete</button><button class="btn alt" data-act="loadGame">Back</button></div>`);},
   delYes:i=>{store.del(slotKey(i));if(store.get(LASTKEY)==i)store.del(LASTKEY);refreshTitle();[1,2,3].some(k=>readSlot(k))?ACTS.loadGame():closeSheet();}
 };
-Object.assign(ACTS,HOME_ACTS);
+Object.assign(ACTS,HOME_ACTS,TS_ACTS);
 sheet.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled){audio();ACTS[b.dataset.act](b.dataset.arg);}});
 $('menuBtn').addEventListener('click',()=>{audio();ACTS.pause();});
 $('title').addEventListener('click',e=>{audio();const b=e.target.closest('[data-act]');if(b)ACTS[b.dataset.act](b.dataset.arg);});
-setInterval(()=>{if(mode==='play'&&wrap.hidden)save();},10000);
+setInterval(()=>{if(mode==='play'&&wrap.hidden){checkStickers();save();}},10000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});addEventListener('pagehide',()=>save());
 wrap.addEventListener('pointerdown',audio);
 
@@ -1397,6 +1716,7 @@ wrap.addEventListener('pointerdown',audio);
 const keys={};let jx=0,jy=0,joyId=null;const joy=$('joy'),knob=$('knob');
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;keys[e.code]=true;
   if((e.code==='Space'||e.code==='Enter')&&!paused&&!actBtn.hidden){e.preventDefault();doAction();}
+  if(e.code==='KeyT')throwBall();
   if(e.code==='Escape'){if(!wrap.hidden)closeSheet();else if(mode==='play')ACTS.pause();}});
 addEventListener('keyup',e=>keys[e.code]=false);
 function joyMove(e){const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,max=r.width/2-12;
@@ -1428,6 +1748,7 @@ $('boxBtn').addEventListener('click',()=>{audio();openBox();});
 let current=null;
 function doAction(){audio();if(current)current.fn();}
 actBtn.addEventListener('click',doAction);
+const ballBtn=$('ballBtn');ballBtn.addEventListener('click',throwBall);
 
 /* ---------- loop ---------- */
 let clock=0,last=performance.now(),cullT=0;
@@ -1437,7 +1758,7 @@ function goalTarget(){
   for(const t of[1,2,3])if(!hasTier(t))return S.coins>=minPrice(t)?spots[t-1]:null;
   for(const id in Q)if(S.q[id].s==='active'&&qCount(id)>=Q[id].need)return npcs[id];
   if(S.q.show.s!=='done'&&showReqs().every(x=>x[0]))return npcs.judge;return null;}const camPos=new THREE.Vector3(),look=new THREE.Vector3();
-function petDog(d){bark();hearts(d.g.position.clone().setY(2));d.jump=1;toast(`${d.name} gives the best hugs!`);}
+function petDog(d){bark();hearts(d.g.position.clone().setY(2));d.jump=1;toast(`${d.name} gives the best hugs!`);S.st.hug++;refreshHUD();}
 function update(dt){clock+=dt;
   let mx=0,mz=0;
   if(!paused){mx=jx+((keys.KeyD||keys.ArrowRight)?1:0)-((keys.KeyA||keys.ArrowLeft)?1:0);mz=jy+((keys.KeyS||keys.ArrowDown)?1:0)-((keys.KeyW||keys.ArrowUp)?1:0);}
@@ -1453,20 +1774,24 @@ function update(dt){clock+=dt;
   player.userData.ph=(player.userData.ph||0)+spd*dt*1.6;const sw=Math.sin(player.userData.ph)*Math.min(1,spd/4)*.7;
   player.userData.legs[0].rotation.x=sw;player.userData.legs[1].rotation.x=-sw;player.userData.arms[0].rotation.x=-sw;player.userData.arms[1].rotation.x=GEAR[S.leash]&&dogsW.length?-.5:sw;
   player.position.y=Math.abs(Math.sin(player.userData.ph))*.06*Math.min(1,spd/4);}
-  // dogs follow in a line
+  if(player.userData.throwT>0){player.userData.throwT-=dt;player.userData.arms[1].rotation.x=-.6-2.2*Math.sin(Math.max(0,player.userData.throwT)/.35*Math.PI);}
+  // dogs follow in a line; a dog fetching the ball or sniffing treasure leaves the line for a bit
+  ballUpdate(dt);if(mode==='play')digUpdate(dt,P);
   let lx=P.x,lz=P.z;
-  if(!driving)dogsW.forEach((d,i)=>{const p=d.g.position,dx=lx-p.x,dz=lz-p.z,dist=Math.hypot(dx,dz),want=i?1.9:2.1;let v=0;
+  if(!driving)dogsW.forEach((d,i)=>{const p=d.g.position;let v=0;const busy=d.fetching||d.sniff;
+    if(d.fetching)v=fetchMove(d,dt);else if(d.sniff)v=sniffMove(d,dt);
+    else{const dx=lx-p.x,dz=lz-p.z,dist=Math.hypot(dx,dz),want=i?1.9:2.1;
     if(dist>want){v=Math.min(14,(dist-want)*4.5);p.x+=dx/dist*v*dt;p.z+=dz/dist*v*dt;collide(p,.4);}
     if(dist>20){p.x=lx-dx/dist*3;p.z=lz-dz/dist*3;}
-    if(dist>.3&&(v>.2||dist>want+.3)){const a=Math.atan2(dx,dz);let da=a-d.g.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));d.g.rotation.y+=da*Math.min(1,dt*8);}
+    if(dist>.3&&(v>.2||dist>want+.3))turnTo(d.g,dx,dz,dt*8);}
     d.spd+=(v-d.spd)*Math.min(1,dt*8);d.phase+=d.spd*dt*2.6;const k=Math.min(1,d.spd/3)*.75;
     const off=[0,Math.PI,Math.PI,0];d.legs.forEach((l,j)=>l.rotation.x=Math.sin(d.phase+off[j])*k);
     d.wagT+=dt*(d.spd<.5?16:9);d.tail.rotation.y=Math.sin(d.wagT)*.6;
     d.jump=Math.max(0,d.jump-dt*1.8);d.body.position.y=Math.abs(Math.sin(d.phase))*.05*k+Math.sin(d.jump*Math.PI)*.8;
-    d.head.rotation.x=Math.sin(clock*1.3+i)*.06;
+    d.head.rotation.x=d.sniff&&d.spd<1?.42+Math.sin(clock*13)*.1:Math.sin(clock*1.3+i)*.06;
     if(d.acc&&d.acc.userData.cape)d.acc.userData.cape.rotation.x=Math.min(.45,d.spd*.07)+Math.sin(clock*9+i)*.05*Math.min(1,d.spd/3);
-    lx=p.x;lz=p.z;});
-  player.updateMatrixWorld(true);dogsW.forEach(d=>{d.g.updateMatrixWorld(true);if(!driving)updateLeash(d);});
+    if(!busy){lx=p.x;lz=p.z;}});
+  player.updateMatrixWorld(true);dogsW.forEach(d=>{d.g.updateMatrixWorld(true);if(driving)return;if(d.fetching||d.sniff)d.leash.forEach(m=>m.visible=false);else updateLeash(d);});
   // camera + sun
   const portrait=camera.aspect<1;
   if(mode==='title'){const a=clock*.06;camera.position.set(Math.sin(a)*48,portrait?34:24,Math.cos(a)*48);camera.lookAt(0,0,-6);}
@@ -1485,6 +1810,7 @@ function update(dt){clock+=dt;
     if((P.x-n.x)**2+(P.z-n.z)**2<64){const a=Math.atan2(P.x-n.x,P.z-n.z);let da=a-n.g.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));n.g.rotation.y+=da*Math.min(1,dt*4);}}
   {const tg=goalTarget();const dx=tg?tg.x-P.x:0,dz=tg?tg.z-P.z:0,dd=Math.hypot(dx,dz);arrow.visible=!!tg&&dd>5&&!paused&&!inHome;
    if(arrow.visible){arrow.position.set(P.x+dx/dd*1.8,.08,P.z+dz/dd*1.8);arrow.rotation.y=Math.atan2(dx,dz)+Math.PI;arrow.material.opacity=.65+Math.sin(clock*6)*.3;}}
+  dayUpdate(dt);if(mode==='play'&&!S.st.hills&&P.z<-78&&P.z>-200){S.st.hills=1;toast('Welcome to Sunny Hills! Visit Ms. Twinkle for the Trick Show.');refreshHUD();}
   if(clouds)clouds.rotation.y+=dt*.006;water.position.y=.68+Math.sin(clock*2)*.02;spout.scale.setScalar(1+Math.sin(clock*5)*.12);
   updateFx(dt);if(inHome)homeUpdate(dt);
   cullT-=dt;if(cullT<=0){cullT=.25;const C=camera.position;for(const f of farCull)f.o.visible=(C.x-f.x)**2+(C.z-f.z)**2<f.r2;}
@@ -1494,11 +1820,13 @@ function update(dt){clock+=dt;
   let best=null,bd=1e9;
   if(!paused&&driving)best={label:'Hop out',fn:()=>exitCar()};else if(!paused&&inHome){best=homeAction(P);if(!best)for(const d of dogsW.concat(homeDogs)){const dd=Math.hypot(P.x-d.g.position.x,P.z-d.g.position.z);if(dd<2.8&&dd<bd){bd=dd;best={label:'Hug',fn:()=>petDog(d)};}}}
   else if(!paused){for(const s of spots){const d=Math.hypot(P.x-s.x,P.z-s.z);if(d<s.r&&d<bd){bd=d;best=s;}}
+    if(!best)for(const s of digs)if(s.on&&s.found&&(P.x-s.x)**2+(P.z-s.z)**2<5.5){best={label:'Dig',fn:()=>digAt(s)};break;}
     if(!best)for(const c of cars){if(Math.hypot(P.x-c.g.position.x,P.z-c.g.position.z)<3.4){best={label:'Drive',fn:()=>enterCar(c)};break;}}
     if(!best)for(const a of amb){if(a.g.visible&&(P.x-a.x)**2+(P.z-a.z)**2<9){best={label:'Say hi',fn:()=>{toast(a.line);beep(660,.08,'sine',.05);}};break;}}
     if(!best)for(const d of dogsW){const dd=Math.hypot(P.x-d.g.position.x,P.z-d.g.position.z);if(dd<2.8&&dd<bd){bd=dd;best={label:'Hug',fn:()=>petDog(d)};}}}
   if((best&&best.label)!==(current&&current.label)||!!best!==!!current){actBtn.hidden=!best;if(best)actBtn.textContent=best.label;}
   current=best;
+  const tb=canThrow();if(ballBtn.hidden===tb)ballBtn.hidden=!tb;
 }
 // keep the camera out of buildings: pull it in toward the player when a wall is in the way
 const camTmp=new THREE.Vector3();
@@ -1507,7 +1835,7 @@ function camClear(P,c){for(let t=.08;t<=1;t+=.04){const x=P.x+(c.x-P.x)*t,y=1+(c
 function resize(){if(PV&&PV.on)setTimeout(()=>{const b=sheet.querySelector('.pvbox');if(b&&PV.on)pvSize(b.clientWidth,b.clientHeight);},60);const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?58:50;camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);renderer.render(scene,camera);
-  if(PV&&PV.on&&!wrap.hidden&&PV.dog){PV.dog.g.rotation.y+=dt*.8;const dd=PV.dog;if(dd.tail){dd.wagT=(dd.wagT||0)+dt*14;dd.tail.rotation.y=Math.sin(dd.wagT)*.5;}if(dd.acc&&dd.acc.userData.cape)dd.acc.userData.cape.rotation.x=.15+Math.sin(clock*5)*.06;PV.r.render(PV.sc,PV.cam);}requestAnimationFrame(frame);}
+  if(PV&&PV.on&&!wrap.hidden&&PV.dog){if(!PV.still)PV.dog.g.rotation.y+=dt*.8;else pvTrick(dt);const dd=PV.dog;if(dd.tail){dd.wagT=(dd.wagT||0)+dt*14;dd.tail.rotation.y=Math.sin(dd.wagT)*.5;}if(dd.acc&&dd.acc.userData.cape)dd.acc.userData.cape.rotation.x=.15+Math.sin(clock*5)*.06;PV.r.render(PV.sc,PV.cam);}requestAnimationFrame(frame);}
 
 /* ---------- mini map ---------- */
 const mini=$('mini'),mctx=mini.getContext('2d'),MS=220/264,mx_=x=>(x+132)*MS,mz_=z=>(z+132)*MS;let miniBase=null,miniT=0;
@@ -1527,6 +1855,7 @@ function miniDraw(){if(!miniBase)miniBuild();mctx.drawImage(miniBase,0,0);const 
   for(const c of cars){if(c===driving)continue;mctx.fillStyle='#fff';mctx.fillRect(mx_(c.g.position.x)-2.5,mz_(c.g.position.z)-2.5,5,5);}
   {const hx=mx_(HOME.x),hz=mz_(HOME.z);mctx.fillStyle=S.home.own?'#ff5d8f':'#ffffff';mctx.strokeStyle='#ff5d8f';mctx.lineWidth=1.5;mctx.beginPath();mctx.moveTo(hx,hz+5);mctx.bezierCurveTo(hx+8,hz-1,hx+4,hz-7,hx,hz-3);mctx.bezierCurveTo(hx-4,hz-7,hx-8,hz-1,hx,hz+5);mctx.fill();mctx.stroke();}
   for(const it of items)if(it.on&&it.kind!=='coin'&&!it.done){mctx.fillStyle=it.kind==='flag'||it.kind==='mail'?'#ffc53d':'#ff5d8f';mctx.beginPath();mctx.arc(mx_(it.x),mz_(it.z),3,0,7);mctx.fill();}
+  mctx.fillStyle='#8a5a3c';for(const s of digs)if(s.on&&s.found){mctx.beginPath();mctx.arc(mx_(s.x),mz_(s.z),3,0,7);mctx.fill();}
   for(const id in npcs){const n=npcs[id];if(n.mk.visible){mctx.fillStyle='#ffc53d';mctx.strokeStyle='#2a2140';mctx.lineWidth=1.5;mctx.beginPath();mctx.arc(mx_(n.x),mz_(n.z),4.5,0,7);mctx.fill();mctx.stroke();}}
   const tg=goalTarget();if(tg){mctx.strokeStyle='#ff5d8f';mctx.lineWidth=2.5;mctx.beginPath();mctx.arc(mx_(tg.x),mz_(tg.z),7+Math.sin(clock*6)*1.5,0,7);mctx.stroke();}
   mctx.save();mctx.translate(mx_(P.x),mz_(P.z));mctx.rotate(-player.rotation.y+Math.PI);mctx.fillStyle='#ff5d8f';mctx.strokeStyle='#fff';mctx.lineWidth=2;
@@ -1542,8 +1871,11 @@ function init(){
   addNpc('chicks',90,33,-.8,{shirt:0xe23b3b,hair:0x9a6232,pants:0x2f4fbf,hat:0xd9b45a},'Farmer Gus');
   addNpc('ducks',-80,22,-1.4,{shirt:0x4fb3ff,hair:0xdcdcdc,pony:true,pants:0x2a2140},'Captain Mae');
   addNpc('mail',-35,-13,0,{shirt:0x3b82f6,hair:0x2b1a10,pants:0x2a2140,hat:0x3b82f6},'Postie Pip');
+  addNpc('cupcakes',HILLS.bakery.x+3.3,HILLS.bakery.z+1.3,.4,{shirt:0xff9ec7,hair:0xc0502b,style:'buns',pants:0xffffff,cap:'none'},'Baker Bea');
+  addNpc('trick',HILLS.stage.x+6.5,HILLS.stage.z+4,-.6,{shirt:0xb48cff,hair:0xffc53d,style:'long',pants:0x2a2140,skin:0xd9a37a},'Ms. Twinkle');
   addNpc('judge',101,-26,-.4,{shirt:0x2a2140,hair:0x9a9a9a,pants:0x2a2140,hat:0x2a2140},'Judge');
   for(let i=0;i<70;i++){const p=randPos(2);addItem('coin',p.x,p.z);}
+  buildBall();buildDigs();
   player.position.set(0,0,-12);
   resize();refreshHUD();goTitle();requestAnimationFrame(frame);
 }
