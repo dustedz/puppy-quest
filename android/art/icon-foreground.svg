@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 432 432" width="432" height="432">
+<!-- Android adaptive icon foreground layer (108dp canvas). Made from icon.svg; rebuild PNGs with: node make-icons.js -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6cc6ff"/><stop offset="1" stop-color="#b8f0c8"/></linearGradient>
+    <radialGradient id="fur" cx=".45" cy=".35" r=".7"><stop offset="0" stop-color="#e2a76a"/><stop offset="1" stop-color="#b8743c"/></radialGradient>
+    <radialGradient id="ear" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="#7a4a26"/><stop offset="1" stop-color="#4f2c14"/></radialGradient>
+  </defs>
+<g transform="translate(75.2 75.2) scale(0.55)">
+  
+  <!-- ears -->
+  <path d="M150 170 C80 180 70 300 110 360 C135 395 175 380 180 330 C185 270 190 210 150 170Z" fill="url(#ear)"/>
+  <path d="M362 170 C432 180 442 300 402 360 C377 395 337 380 332 330 C327 270 322 210 362 170Z" fill="url(#ear)"/>
+  <!-- head -->
+  <ellipse cx="256" cy="250" rx="125" ry="118" fill="url(#fur)"/>
+  <!-- white blaze and muzzle -->
+  <path d="M256 140 C240 160 232 220 236 260 L276 260 C280 220 272 160 256 140Z" fill="#fff6ea"/>
+  <ellipse cx="256" cy="305" rx="78" ry="58" fill="#fff6ea"/>
+  <!-- eyes -->
+  <ellipse cx="205" cy="240" rx="20" ry="23" fill="#2b1a10"/><circle cx="212" cy="232" r="7" fill="#fff"/>
+  <ellipse cx="307" cy="240" rx="20" ry="23" fill="#2b1a10"/><circle cx="314" cy="232" r="7" fill="#fff"/>
+  <!-- cheeks -->
+  <ellipse cx="180" cy="285" rx="17" ry="10" fill="#ff9fb0" opacity=".7"/><ellipse cx="332" cy="285" rx="17" ry="10" fill="#ff9fb0" opacity=".7"/>
+  <!-- nose and smile -->
+  <ellipse cx="256" cy="282" rx="25" ry="17" fill="#2b1a10"/><ellipse cx="248" cy="276" rx="8" ry="4" fill="#6b5446"/>
+  <path d="M256 298 L256 314 M226 318 C238 334 252 330 256 314 C260 330 274 334 286 318" stroke="#2b1a10" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M244 326 C246 346 266 346 268 326Z" fill="#ff7088"/>
+  <!-- stitch seam for plush look -->
+  <path d="M256 138 L256 150" stroke="#8a5a30" stroke-width="4" stroke-dasharray="6 6"/>
+  <!-- paw coin -->
+  <g transform="translate(380 380)">
+    <circle r="56" fill="#ffcf3a" stroke="#e09a12" stroke-width="8"/>
+    <ellipse cx="0" cy="12" rx="20" ry="16" fill="#e09a12"/>
+    <circle cx="-22" cy="-10" r="9" fill="#e09a12"/><circle cx="-8" cy="-24" r="9" fill="#e09a12"/>
+    <circle cx="8" cy="-24" r="9" fill="#e09a12"/><circle cx="22" cy="-10" r="9" fill="#e09a12"/>
+  </g>
+</g>
+</svg>

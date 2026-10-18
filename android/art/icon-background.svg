@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 432 432" width="432" height="432">
+<!-- Android adaptive icon background layer (108dp canvas). Made from icon.svg; rebuild PNGs with: node make-icons.js -->
+  <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6cc6ff"/><stop offset="1" stop-color="#b8f0c8"/></linearGradient></defs>
+  <rect width="432" height="432" fill="url(#sky)"/>
+<g transform="translate(75.2 75.2) scale(0.55)">
+  <ellipse cx="256" cy="470" rx="230" ry="70" fill="#7fd27a"/>
+</g>
+</svg>
