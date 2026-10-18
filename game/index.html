@@ -38,6 +38,8 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--sky);color:var(-
 .wrap{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;background:rgba(42,33,64,.35);
   padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));box-sizing:border-box}
 @media (min-width:700px) and (min-height:560px){.wrap{align-items:center}}
+/* Rows size to their content, so the 3D preview box can't collapse and cover the rows below it on tall phone screens */
+@media (min-height:501px){.sheet{grid-auto-rows:max-content}}
 .sheet{background:var(--paper);border-radius:26px;max-width:440px;width:100%;box-sizing:border-box;padding:22px 20px 20px;box-shadow:0 6px 0 var(--shade);max-height:100%;overflow:auto;display:grid;gap:12px}
 .sheet h2{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.05;margin:0;color:var(--grape);text-wrap:balance}
 .sheet p{margin:0;font-size:16px;line-height:1.45}
@@ -165,11 +167,48 @@ input[type=text]:focus{outline:none;border-color:var(--grape)}
   .lefty #ballBtn{right:auto;left:calc(226px + env(safe-area-inset-left,0px))}
   #stkPop{top:calc(env(safe-area-inset-top,0px) + 110px)}
 }
+/* care, bedtime, photo mode, park games */
+.fxl{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
+.fxl span{position:absolute;bottom:18%;font-size:30px;animation:fxup 1s ease-out forwards}
+@keyframes fxup{from{transform:translateY(0) scale(.6);opacity:1}to{transform:translateY(-120px) scale(1.25);opacity:0}}
+p.hearts{font-size:28px;line-height:1;color:var(--berry);letter-spacing:3px;text-align:center;margin:0}
+.trk small{display:block;font-family:var(--body);font-size:12px;font-weight:800;opacity:.75}
+.hbtn{border:0;background:#fff0f5;color:var(--berry);border-radius:999px;font:800 13px var(--body);padding:5px 10px;cursor:pointer;justify-self:center}
+.hbtn span{letter-spacing:1px}
+#camBtn{border:0;font-family:var(--display);font-size:15px;color:var(--grape);cursor:pointer;padding:7px 12px}
+#sleep{position:fixed;inset:0;z-index:6;display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 50% 40%,#3a3a7a,#151536);color:var(--paper);
+  opacity:0;pointer-events:none;transition:opacity .9s;padding:24px}
+#sleep.on{opacity:1;pointer-events:auto}
+#sleep b{display:block;font-family:var(--display);font-weight:400;font-size:clamp(24px,6vw,40px);max-width:16em}
+#sleep small{display:block;font-weight:800;opacity:.75;margin-top:6px}
+#sleep .zz{font-size:56px;animation:zz 1.6s ease-in-out infinite}
+@keyframes zz{50%{transform:translateY(-10px) rotate(-8deg)}}
+.photo .hud,.photo #joy,.photo #look,.photo #act,.photo #ballBtn,.photo #mini,.photo #pgBar{display:none!important}
+#photoUi .pbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;align-items:center}
+#photoUi .ptop{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));top:calc(12px + env(safe-area-inset-top,0px));display:flex;gap:8px}
+#photoUi .ptop .chip{border:0;font-family:var(--display);font-size:16px;color:var(--grape);cursor:pointer;padding:9px 16px}
+.pb{width:54px;height:54px;border-radius:50%;border:0;background:var(--paper);box-shadow:0 3px 0 var(--shade);font:400 26px var(--display);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+.pb.snap{width:78px;height:78px;background:#fff;border:6px solid var(--berry);box-shadow:0 4px 0 var(--shade)}
+.pb:active{transform:translateY(3px)}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:7}
+#flash.go{animation:flash .5s ease-out}
+@keyframes flash{from{opacity:.95}to{opacity:0}}
+.photoImg{width:100%;max-height:52vh;object-fit:contain;border-radius:12px;box-shadow:0 3px 0 var(--shade);-webkit-touch-callout:default;user-select:auto;-webkit-user-select:auto}
+.pg #goal{visibility:hidden}
+#pgBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;
+  font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#pgBar button{border:0;border-radius:999px;background:var(--lilac);font:800 14px var(--body);padding:6px 12px;cursor:pointer;color:var(--ink)}
+@media (max-height:500px){
+  .sheet.shop>.trks{grid-column:2}
+  #pgBar{font-size:17px;top:calc(env(safe-area-inset-top,0px) + 8px)}
+  .pb{width:46px;height:46px;font-size:22px}.pb.snap{width:64px;height:64px}
+  .photoImg{max-height:58vh}
+}
 </style>
 
 <canvas id="game"></canvas>
 <div class="hud">
-  <div class="col"><div class="chip" id="coins" aria-label="Paw coins"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#ffc53d" stroke="#d99a10" stroke-width="2"/><g fill="#b7791f"><ellipse cx="13" cy="16" rx="4.2" ry="3.4"/><circle cx="8" cy="11" r="1.8"/><circle cx="11.2" cy="8.2" r="1.8"/><circle cx="14.8" cy="8.2" r="1.8"/><circle cx="18" cy="11" r="1.8"/></g></svg><span id="coinN">0</span></div><button class="chip" id="boxBtn">Toy box</button></div>
+  <div class="col"><div class="chip" id="coins" aria-label="Paw coins"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="#ffc53d" stroke="#d99a10" stroke-width="2"/><g fill="#b7791f"><ellipse cx="13" cy="16" rx="4.2" ry="3.4"/><circle cx="8" cy="11" r="1.8"/><circle cx="11.2" cy="8.2" r="1.8"/><circle cx="14.8" cy="8.2" r="1.8"/><circle cx="18" cy="11" r="1.8"/></g></svg><span id="coinN">0</span></div><button class="chip" id="boxBtn">Toy box</button><button class="chip" id="camBtn" aria-label="Photo mode">📷 Photo</button></div>
   <div class="chip" id="goal"><b>Next goal</b><span id="goalT">Loading the town…</span><small id="goalQ"></small></div>
   <div class="col r"><button class="chip" id="menuBtn" aria-label="Pause menu"><span></span></button>
   <button class="chip" id="fsBtn" aria-label="Full screen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="#2a2140" stroke-width="2.6" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button></div>
@@ -181,6 +220,14 @@ input[type=text]:focus{outline:none;border-color:var(--grape)}
 <div id="stkPop" class="off" aria-live="polite"></div>
 <canvas id="mini" width="220" height="220" aria-label="Town map. Tap to make it bigger."></canvas>
 <div id="toast" class="off"></div>
+<div class="chip" id="pgBar" hidden><span id="pgT"></span><button data-pg="stop">Stop</button></div>
+<div id="photoUi" hidden>
+  <div class="ptop"><button class="chip" id="poseBtn" data-ph="pose">Pose: Wave</button><button class="chip" data-ph="done">Done</button></div>
+  <div class="pbar"><button class="pb" data-ph="left" aria-label="Turn the camera left">⟲</button><button class="pb" data-ph="out" aria-label="Zoom out">−</button>
+    <button class="pb snap" data-ph="snap" aria-label="Take a picture"></button><button class="pb" data-ph="in" aria-label="Zoom in">+</button><button class="pb" data-ph="right" aria-label="Turn the camera right">⟳</button></div>
+</div>
+<div id="sleep" aria-live="polite"></div>
+<div id="flash"></div>
 <div id="title" hidden>
   <button class="chip" id="fsBtn2" aria-label="Full screen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="#2a2140" stroke-width="2.6" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
   <div class="logo"><div class="kicker">An ESSA adventure</div><h1>Puppy<br>Quest</h1><div class="byline">by Emily and Dad</div></div>
@@ -263,15 +310,26 @@ const GEAR={
   goldstar:{slot:'face',name:'Treasure Star Glasses',dig:true,c:0xe8c25a,gloss:true,star:true,desc:'Golden star glasses that were buried under a tree.'},
   jewel:{slot:'neck',name:'Royal Jewel Collar',dig:true,c:0x7b4fd6,gloss:true,gem:true,desc:'A purple velvet collar with a sparkly jewel. Found by a very good nose!'},
   sailor:{slot:'neck',name:'Sailor Bandana',dig:true,c:0x3b82f6,kind:'bandana',desc:'A blue bandana that smells a tiny bit like the sea.'},
-  leash_bone:{slot:'leash',name:'Bone White Leash',dig:true,c:0xfff3d6,desc:'A creamy white leash with a little bone charm.'}
+  leash_bone:{slot:'leash',name:'Bone White Leash',dig:true,c:0xfff3d6,desc:'A creamy white leash with a little bone charm.'},
+  // seasonal hunt prizes: only won by finding all 8 hidden things in that season
+  bunnyears:{slot:'head',name:'Bunny Ears',hunt:'spring',c:0xffffff,kind:'bunnyears',desc:'Fluffy white bunny ears from the spring egg hunt.'},
+  melonhat:{slot:'head',name:'Watermelon Sun Hat',hunt:'summer',c:0x4caf50,band:0xff5d8f,kind:'straw',desc:'A juicy green sun hat from the summer seashell hunt.'},
+  pumpkinhat:{slot:'head',name:'Pumpkin Hat',hunt:'autumn',c:0xff8a2a,kind:'pumpkin',desc:'A cozy pumpkin hat with a curly stem, from the autumn pumpkin hunt.'},
+  antlers:{slot:'head',name:'Reindeer Antlers',hunt:'winter',c:0x9a6232,kind:'antlers',desc:'Fuzzy antlers with golden jingle bells, from the winter present hunt.'},
+  // sold at Fetch & Fancy only during their season
+  scarf_spring:{slot:'neck',name:'Pastel Scarf',price:20,sea:'spring',c:0xb8e0ff,kind:'scarf',desc:'A light blue scarf for breezy days. Only sold in spring!'},
+  shades_summer:{slot:'face',name:'Beach Shades',price:20,sea:'summer',c:0xff8a2a,gloss:true,desc:'Bright orange sunglasses for the beach. Only sold in summer!'},
+  scarf_autumn:{slot:'neck',name:'Autumn Leaf Scarf',price:20,sea:'autumn',c:0xe0702a,kind:'scarf',desc:'A warm orange scarf the color of fall leaves. Only sold in autumn!'},
+  sweater_winter:{slot:'body',name:'Holiday Sweater',price:30,sea:'winter',c:0x2f9e5a,kind:'sweater',desc:'A cozy green knitted sweater. Only sold in winter!'}
 };
 const DIG_GEAR=Object.keys(GEAR).filter(k=>GEAR[k].dig);
 const SLOTS_G=[['neck','Neck'],['body','Body'],['head','Head'],['face','Face'],['leash','Leash']],SLOTNAME=Object.fromEntries(SLOTS_G);
 const PAL={skin:[0xf8d5b8,0xf2c29b,0xd9a37a,0xb07850,0x7a4e2f],hair:[0x5a3418,0x2b1a10,0xe6c068,0xc0502b,0x1b1b1f,0xff7ab8,0x7b4fd6,0x4fb3ff],
   shirt:[0x8a5cf6,0xff5d8f,0x2fbf8f,0xffc53d,0x4fb3ff,0xe23b3b,0xffffff,0x2a2140],pants:[0x2f4fbf,0x2a2140,0xff9ec7,0x6d8b74,0xb48cff,0xe9dcc0],shoes:[0xffffff,0xff5d8f,0x2a2140,0xffc53d,0x2fbf8f]};
-const STYLES=[['pony','Ponytail'],['pigtails','Pigtails'],['bob','Bob'],['long','Long'],['buns','Space buns'],['short','Short']];
+const STYLES=[['pony','Ponytail'],['pigtails','Pigtails'],['bob','Bob'],['long','Long'],['buns','Space buns'],['short','Short'],['spiky','Spiky'],['side','Side swoop'],['curly','Curly'],['buzz','Buzz cut']];
+const KIDS=[['girl','Girl'],['boy','Boy']],KID_STYLE={girl:'pony',boy:'spiky'};
 const HATS=[['none','None'],['cap','Cap'],['beanie','Beanie'],['bow','Bow'],['tiara','Tiara'],['bunny','Bunny ears']];
-const LOOK0={skin:1,hair:0,style:'pony',shirt:0,pants:0,shoes:0,hat:'none'};
+const LOOK0={kid:'girl',skin:1,hair:0,style:'pony',shirt:0,pants:0,shoes:0,hat:'none'};
 const KIND={1:'Cartoon ESSA',2:'Realistic ESSA',3:'Super realistic ESSA'};
 const STORES={
   valu:{name:'ValuMart',tag:'Save more. Hug more.',tier:1,dogs:['cartoon','bubble','spotty']},
@@ -282,15 +340,15 @@ const STORES={
 const SLOTS=3,slotKey=i=>'puppyquest.slot'+i,LASTKEY='puppyquest.last',SETKEY='puppyquest.settings';
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-const SET=Object.assign({sound:true,music:true,lefty:false,track:0,autocam:true,daynight:true},store.get(SETKEY)||{});
+const SET=Object.assign({sound:true,music:true,lefty:false,track:0,autocam:true,daynight:true,season:'auto'},store.get(SETKEY)||{});
 const saveSet=()=>store.set(SETKEY,SET);
 function fresh(){return{coins:0,dogs:[],pos:null,savedAt:0,owned:[],leash:null,look:{...LOOK0},
   q:{bones:{s:'new',n:0},flowers:{s:'new',n:0},walk:{s:'new',f:[0,0,0,0]},show:{s:'new'},chicks:{s:'new',n:0},ducks:{s:'new',n:0},mail:{s:'new',f:[0,0,0,0]},cupcakes:{s:'new',n:0}},home:{own:false,wall:0,floor:0,paint:0,f:{}},
-  st:{...ST0},stk:[]};}
-const ST0={hug:0,fetch:0,dig:0,coins:0,drive:0,again:0,shows:0,showBest:0,night:0,hills:0}; // lifetime counts for the sticker book
+  st:{...ST0},stk:[],sea:{}};}
+const ST0={hug:0,fetch:0,dig:0,coins:0,drive:0,again:0,shows:0,showBest:0,night:0,hills:0,rename:0,bed:0,brush:0,bath:0,treat:0,photo:0,hunt:0,agBest:0,popBest:0,hideAll:0,pk:0}; // lifetime counts for the sticker book
 const valid=s=>!!(s&&s.q&&Array.isArray(s.dogs));
 const owns=id=>S.owned.includes(id);
-function migrate(s){s.owned=s.owned||[];s.home=Object.assign({own:false,wall:0,floor:0,paint:0,f:{}},s.home||{});s.home.f=s.home.f||{};const fq=fresh().q;for(const k in fq)if(!s.q[k])s.q[k]=fq[k];s.look=Object.assign({...LOOK0},s.look||{});if(s.leash===undefined)s.leash=null;s.dogs.forEach(d=>d.gear=d.gear||{});
+function migrate(s){s.owned=s.owned||[];s.home=Object.assign({own:false,wall:0,floor:0,paint:0,f:{}},s.home||{});s.home.f=s.home.f||{};const fq=fresh().q;for(const k in fq)if(!s.q[k])s.q[k]=fq[k];s.look=Object.assign({...LOOK0},s.look||{});if(s.leash===undefined)s.leash=null;s.dogs.forEach(d=>{d.gear=d.gear||{};if(d.joy==null)d.joy=70;d.care=d.care||{};});s.sea=s.sea&&typeof s.sea==='object'?s.sea:{};
   s.st=Object.assign({...ST0},s.st||{});s.stk=Array.isArray(s.stk)?s.stk:[];
   const give=(id,slot)=>{if(!s.owned.includes(id))s.owned.push(id);if(slot)s.dogs.forEach(d=>{if(!d.gear[slot])d.gear[slot]=id;});};
   if(s.acc){const A=s.acc;if(A.harness)give('harness_red','body');if(A.collar)give('collar_pink','neck');if(A.crown)give('crown','head');if(A.leash){give('leash_purple');s.leash=s.leash||'leash_purple';}delete s.acc;}
@@ -522,7 +580,7 @@ function lawnStripes(cx,cz,ry,w,l){const g=new THREE.Group();g.position.set(cx,.
 /* ---------- world ---------- */
 const spots=[]; // interactables
 function buildWorld(){
-  const g=new THREE.Mesh(new THREE.PlaneGeometry(420,420),new THREE.MeshStandardMaterial({color:0xffffff,map:groundTex(),roughness:.95}));g.receiveShadow=true;scene.add(g);g.rotation.x=-Math.PI/2;skyAndClouds();
+  const g=groundMesh=new THREE.Mesh(new THREE.PlaneGeometry(420,420),new THREE.MeshStandardMaterial({color:0xffffff,map:groundTex(season()),roughness:.95}));g.receiveShadow=true;scene.add(g);g.rotation.x=-Math.PI/2;skyAndClouds();
   const flat=(w,d,c,x,z,y=.02)=>{const m=mesh(new THREE.PlaneGeometry(w,d),mat(c),x,y,z,scene,false);m.rotation.x=-Math.PI/2;return m;};
   buildRoads();buildPond();buildFarm();
   flat(3,30,0xe9dcc0,0,-1);flat(80,2.6,0xe9dcc0,0,6);    // paths
@@ -548,6 +606,7 @@ function buildWorld(){
   bench(-6,27,0);bench(6,27,0);bench(-11,15,Math.PI/2);
   for(const [x,z] of [[9,9],[-9,9],[12,24],[-13,22]]){const b=mesh(new THREE.CylinderGeometry(1.3,1.4,.35,16),mat(0x8a5a3c),x,.17,z);
     const fb=new THREE.Group();fb.position.set(x,0,z);scene.add(fb);for(let i=0;i<7;i++){const a=i/7*Math.PI*2;flowerMesh(Math.cos(a)*.8,Math.sin(a)*.8,[0xff5d8f,0xffc53d,0xffffff,0xb48cff][i%4],.35,fb);}bake(fb);circles.push({x,z,r:1.4});}
+  buildPark();
   // trees
   seed=11;
   for(let i=0;i<300;i++){const x=(rnd()*2-1)*122,z=(rnd()*2-1)*122;if(blocked(x,z,3.5)||onRoad(x,z,3)||inNoTree(x,z,2)||Math.abs(x)<3&&z<10&&z>-14||Math.abs(z-6)<2.5&&Math.abs(x)<42||Math.hypot(x,z-18)<15)continue;tree(x,z,rnd());}
@@ -623,15 +682,17 @@ function skyAndClouds(){
   for(let i=0;i<14;i++){const c=new THREE.Group(),a=rnd()*Math.PI*2,r=70+rnd()*60;c.position.set(Math.cos(a)*r,34+rnd()*22,Math.sin(a)*r);c.rotation.y=-a;
     const n=4+Math.floor(rnd()*4);for(let j=0;j<n;j++){const p=new THREE.Mesh(puff,cm);const s=3+rnd()*3.5;p.scale.set(s*1.3,s*.8,s);p.position.set((j-n/2)*4.2+rnd()*2,rnd()*2.5,rnd()*3);c.add(p);}clouds.add(c);}bake(clouds);
 }
-function groundTex(){const c=document.createElement('canvas');c.width=c.height=256;const k=c.getContext('2d');k.fillStyle='#7cc35a';k.fillRect(0,0,256,256);seed=5;
-  for(let i=0;i<900;i++){const x=rnd()*256,y=rnd()*256,r=2+rnd()*9;k.fillStyle=['#72b850','#8ccd68','#6eb24c','#96d46f','#68aa48'][i%5];k.globalAlpha=.35;k.beginPath();k.arc(x,y,r,0,7);k.fill();}
+const GROUND={spring:['#7cc35a',['#72b850','#8ccd68','#6eb24c','#96d46f','#68aa48','#ffc2dc']],summer:['#7cc35a',['#72b850','#8ccd68','#6eb24c','#96d46f','#68aa48']],
+  autumn:['#7fb352',['#76aa4c','#8cbd5e','#d9893a','#b8803a','#9db24e']],winter:['#eef4fa',['#dde8f2','#ffffff','#cfdce8','#e6eef6','#b7cfa8']]};
+function groundTex(sea='summer'){const [base,dots]=GROUND[sea]||GROUND.summer,c=document.createElement('canvas');c.width=c.height=256;const k=c.getContext('2d');k.fillStyle=base;k.fillRect(0,0,256,256);seed=5;
+  for(let i=0;i<900;i++){const x=rnd()*256,y=rnd()*256,r=2+rnd()*9;k.fillStyle=dots[i%dots.length];k.globalAlpha=.35;k.beginPath();k.arc(x,y,r,0,7);k.fill();}
   k.globalAlpha=1;const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(52,52);t.anisotropy=4;return t;}
 async function loadNature(){
   const base='nature/';const man=await (await fetch(base+'nature.json')).json();const raw=atob(man.bin),bin=new ArrayBuffer(raw.length),bu=new Uint8Array(bin);for(let i=0;i<raw.length;i++)bu[i]=raw.charCodeAt(i);
   const tl=new THREE.TextureLoader(),mats={};
   await Promise.all(Object.entries(man.mats).map(([k,v])=>new Promise((res,rej)=>tl.load(base+v.tex,t=>{t.anisotropy=4;
     mats[k]=new THREE.MeshLambertMaterial({map:t,side:v.alpha?THREE.DoubleSide:THREE.FrontSide,alphaTest:v.alpha?.45:0});res();},undefined,rej))));
-  if(mats.PineTree_Leaves)mats.PineTree_Leaves.color.set(0x8fe07a);
+  if(mats.PineTree_Leaves)mats.PineTree_Leaves.color.set(0x8fe07a);natureMats=mats;seaShader(mats);applySeason(true);
   const geos={};for(const [name,m] of Object.entries(man.models))geos[name]=m.parts.map(p=>{const g=new THREE.BufferGeometry();
     g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(bin,p.p,p.n*3),3));
     g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(bin,p.nm,p.n*3),3,true));
@@ -726,16 +787,19 @@ function dayUpdate(dt){if(mode==='play'&&SET.daynight&&!inHome)dayT=(dayT+dt/DAY
 function person(o){const g=new THREE.Group();const shirt=mat(o.shirt),skin=mat(o.skin||0xf2c29b),pants=mat(o.pants||0x3b5bdb),hair=mat(o.hair),shoe=mat(o.shoes??0xffffff);const style=o.style||(o.pony?'pony':'short');
   const legs=[],arms=[],sc=o.scale||1;
   for(const s of[-1,1]){const p=new THREE.Group();p.userData.anim=true;p.position.set(.17*s,.75,0);g.add(p);mesh(new THREE.CylinderGeometry(.13,.12,.7,10),pants,0,-.35,0,p);mesh(new THREE.BoxGeometry(.24,.14,.38),shoe,0,-.72,.06,p);legs.push(p);}
-  mesh(new THREE.CylinderGeometry(.3,.37,.78,14),shirt,0,1.13,0,g);
+  if(o.boy)mesh(new THREE.CylinderGeometry(.35,.33,.78,14),shirt,0,1.13,0,g);else mesh(new THREE.CylinderGeometry(.3,.37,.78,14),shirt,0,1.13,0,g);
   for(const s of[-1,1]){const p=new THREE.Group();p.userData.anim=true;p.position.set(.43*s,1.42,0);g.add(p);mesh(new THREE.CylinderGeometry(.09,.085,.6,8),shirt,0,-.28,0,p);mesh(new THREE.SphereGeometry(.1,10,8),skin,0,-.62,0,p);arms.push(p);}
   mesh(new THREE.SphereGeometry(.36,20,16),skin,0,1.86,0,g);
-  const h=mesh(new THREE.SphereGeometry(.39,20,14,0,Math.PI*2,0,Math.PI*.55),hair,0,1.88,-.03,g);h.rotation.x=-.25;
+  const h=mesh(new THREE.SphereGeometry(style==='buzz'?.375:.39,20,14,0,Math.PI*2,0,Math.PI*(style==='buzz'?.42:.55)),hair,0,1.88,-.03,g);h.rotation.x=-.25;
   const tie=mat(0xff5d8f);
   if(style==='pony'){mesh(new THREE.SphereGeometry(.17,12,10),hair,0,1.95,-.42,g);mesh(new THREE.SphereGeometry(.13,12,10),hair,0,1.72,-.47,g);mesh(new THREE.TorusGeometry(.08,.03,6,12),tie,0,1.88,-.42,g);}
   if(style==='pigtails')for(const s of[-1,1]){mesh(new THREE.SphereGeometry(.15,12,10),hair,.42*s,1.78,-.08,g);mesh(new THREE.SphereGeometry(.11,12,10),hair,.47*s,1.58,-.1,g);mesh(new THREE.TorusGeometry(.07,.025,6,12),tie,.4*s,1.86,-.08,g).rotation.y=Math.PI/2;}
   if(style==='bob'||style==='long'){const b=mesh(new THREE.SphereGeometry(.42,20,14,0,Math.PI*2,0,Math.PI*.62),hair,0,1.86,-.06,g);b.rotation.x=-.45;}
   if(style==='long')mesh(new THREE.SphereGeometry(.3,14,12),hair,0,1.5,-.26,g).scale.set(1.25,1.5,.55);
   if(style==='buns')for(const s of[-1,1]){mesh(new THREE.SphereGeometry(.15,12,10),hair,.22*s,2.2,-.06,g);}
+  if(style==='spiky')for(const[x,z]of[[0,.18],[-.17,.1],[.17,.1],[-.1,-.08],[.1,-.08],[0,-.22],[-.24,-.12],[.24,-.12]]){const c=mesh(new THREE.ConeGeometry(.11,.34,6),hair,x,2.16-Math.hypot(x,z)*.35,z,g);c.rotation.set(z*1.6,0,-x*1.8);}
+  if(style==='side'){const w=mesh(new THREE.SphereGeometry(.22,14,10),hair,.06,2.06,.24,g);w.scale.set(1.7,.55,.75);w.rotation.z=-.3;}
+  if(style==='curly')for(let i=0;i<10;i++){const a=i/10*Math.PI*2;mesh(new THREE.SphereGeometry(.12,10,8),hair,Math.cos(a)*.3,2.05+Math.sin(i*1.7)*.05,Math.sin(a)*.3-.04,g);}
   if(o.cap==='cap'){const c=mesh(new THREE.SphereGeometry(.4,18,10,0,Math.PI*2,0,Math.PI/2),shirt,0,1.98,-.02,g);mesh(new THREE.BoxGeometry(.4,.04,.3),shirt,0,2.0,.4,g);}
   if(o.cap==='beanie'){mesh(new THREE.SphereGeometry(.41,18,10,0,Math.PI*2,0,Math.PI/2),mat(0xff5d8f),0,1.95,-.02,g);mesh(new THREE.SphereGeometry(.1,10,8),mat(0xffffff),0,2.38,-.02,g);}
   if(o.cap==='bow')for(const s of[-1,1]){const c=mesh(new THREE.ConeGeometry(.12,.26,12),mat(0xff5d8f),.25+.13*s,2.18,-.02,g);c.rotation.z=s*Math.PI/2;}
@@ -744,11 +808,12 @@ function person(o){const g=new THREE.Group();const shirt=mat(o.shirt),skin=mat(o
   if(o.beard)mesh(new THREE.SphereGeometry(.24,14,10),mat(0xf1f1f1),0,1.66,.2,g).scale.set(1,.8,.7);
   if(o.hat){mesh(new THREE.CylinderGeometry(.42,.42,.06,20),mat(o.hat),0,2.16,0,g);mesh(new THREE.CylinderGeometry(.26,.28,.4,16),mat(o.hat),0,2.36,0,g);}
   for(const s of[-1,1])mesh(new THREE.SphereGeometry(.045,8,6),mat(0x222222),.13*s,1.9,.33,g,false);
+  if(o.boy)for(const s of[-1,1])mesh(new THREE.BoxGeometry(.11,.025,.02),mat(0x3a2a1e),.13*s,1.99,.335,g,false).rotation.z=-.12*s;
   mesh(new THREE.TorusGeometry(.09,.025,6,12,Math.PI),mat(0xc0504d),0,1.76,.33,g,false).rotation.z=Math.PI;
   for(const s of[-1,1])mesh(new THREE.SphereGeometry(.06,8,6),mat(0xff9db0),.22*s,1.79,.28,g,false);
   g.scale.setScalar(sc);g.userData={legs,arms};return bake(g);}
 const player=new THREE.Group();scene.add(player);let hand;
-const lookOpts=L=>({skin:PAL.skin[L.skin],hair:PAL.hair[L.hair],style:L.style,shirt:PAL.shirt[L.shirt],pants:PAL.pants[L.pants],shoes:PAL.shoes[L.shoes],cap:L.hat});
+const lookOpts=L=>({boy:L.kid==='boy',skin:PAL.skin[L.skin],hair:PAL.hair[L.hair],style:L.style,shirt:PAL.shirt[L.shirt],pants:PAL.pants[L.pants],shoes:PAL.shoes[L.shoes],cap:L.hat});
 function buildPlayer(L){while(player.children.length)player.remove(player.children[0]);const p=person(lookOpts(L));player.add(p);
   player.userData={legs:p.userData.legs,arms:p.userData.arms,ph:player.userData.ph||0};hand=p.userData.arms[1];}
 buildPlayer(LOOK0);
@@ -916,6 +981,14 @@ function dressWith(d,gear){
     if(hd.kind==='pirate'){mesh(new THREE.CylinderGeometry(.44,.44,.06,3),m,0,.02,0,hg);mesh(new THREE.CylinderGeometry(.455,.455,.025,3),gold,0,.055,0,hg,false);
       mesh(new THREE.SphereGeometry(.22,16,10,0,Math.PI*2,0,Math.PI/2),m,0,.05,0,hg).scale.set(1,1.15,1);
       mesh(new THREE.SphereGeometry(.065,10,8),mat(0xffffff),0,.17,.2,hg,false);for(const s of[-1,1]){const b=mesh(new THREE.BoxGeometry(.17,.03,.02),mat(0xffffff),0,.08,.23,hg,false);b.rotation.z=s*.6;}}
+    if(hd.kind==='pumpkin'){const p=mesh(new THREE.SphereGeometry(.2,16,12),m,0,.09,0,hg);p.scale.set(1.15,.8,1.15);
+      for(let i=0;i<4;i++){const rr=mesh(new THREE.TorusGeometry(.2,.012,6,20),mat(0xd8641a),0,.09,0,hg,false);rr.rotation.y=i/4*Math.PI;rr.scale.set(1.15,.8,1.15);}
+      mesh(new THREE.CylinderGeometry(.025,.035,.11,6),mat(0x3f7a2a),0,.27,0,hg);const lf=mesh(new THREE.SphereGeometry(.06,8,6),mat(0x4caf50),.07,.26,0,hg);lf.scale.set(1.3,.3,.8);}
+    if(hd.kind==='antlers'){for(const s of[-1,1]){const a1=mesh(new THREE.CylinderGeometry(.022,.03,.32,6),m,.12*s,.15,0,hg);a1.rotation.z=-.35*s;
+      const a2=mesh(new THREE.CylinderGeometry(.018,.022,.15,6),m,.21*s,.24,0,hg);a2.rotation.z=-1.1*s;const a3=mesh(new THREE.CylinderGeometry(.018,.02,.12,6),m,.14*s,.31,0,hg);a3.rotation.z=.25*s;
+      mesh(new THREE.SphereGeometry(.035,8,6),gold,.1*s,.03,.07,hg,false);}}
+    if(hd.kind==='bunnyears'){const pk=mat(0xff9ec7);for(const s of[-1,1]){const e=mesh(new THREE.SphereGeometry(.07,12,10),m,.09*s,.2,0,hg);e.scale.set(.75,2.6,.45);e.rotation.z=-.15*s;
+      const n=mesh(new THREE.SphereGeometry(.045,10,8),pk,.09*s,.2,.025,hg,false);n.scale.set(.65,2.2,.3);n.rotation.z=-.15*s;}mesh(new THREE.TorusGeometry(.17,.018,6,20,Math.PI),m,0,.02,0,hg);}
     if(hd.kind==='crown'){mesh(new THREE.CylinderGeometry(.17,.15,.12,16,1,true),gold,0,.06,0,hg);for(let i=0;i<5;i++){const an=i/5*Math.PI*2;mesh(new THREE.ConeGeometry(.04,.12,6),gold,Math.cos(an)*.16,.17,Math.sin(an)*.16,hg);}
       mesh(new THREE.SphereGeometry(.035,8,6),mat(0xff3a6e,{rough:.1}),0,.08,.16,hg);}}
   if(fc){const F=H.face,m=gearMat(fc);
@@ -1110,7 +1183,8 @@ function carryUpdate(dt){const id=carry,f=S.home.f[id],o=furnG[id],F=FURN[id];if
   f.r=Math.round((a+Math.PI)/(Math.PI/2))*(Math.PI/2)%(Math.PI*2);o.position.set(f.x,.3+Math.sin(clock*6)*.06,f.z);
   let dr=f.r-o.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));o.rotation.y+=dr*Math.min(1,dt*10);}
 function homeAction(P){if(carry)return{label:'Put down',fn:()=>putDown()};const R=ROOM;let best=null,bd=1e9;
-  for(const [x,z,label,fn] of[[0,R.d/2-.9,'Go outside',()=>exitHome()],[CAT.x,CAT.z,'Furniture',()=>openFurn()]]){const d=Math.hypot(P.x-R.x-x,P.z-R.z-z);if(d<1.9&&d<bd){bd=d;best={label,fn};}}
+  const spotsH=[[0,R.d/2-.9,'Go outside',()=>exitHome()],[CAT.x,CAT.z,'Furniture',()=>openFurn()]],bb=S.home.f.dogbeds;if(bb&&SET.daynight&&isNight())spotsH.push([bb.x,bb.z,'Bedtime',bedtime]);
+  for(const [x,z,label,fn] of spotsH){const d=Math.hypot(P.x-R.x-x,P.z-R.z-z);if(d<1.9&&d<bd){bd=d;best={label,fn};}}
   if(!best)for(const d of dogsW.concat(homeDogs)){const dd=Math.hypot(P.x-d.g.position.x,P.z-d.g.position.z);if(dd<1.9&&dd<bd){bd=dd;best={label:'Hug',fn:()=>petDog(d)};}}
   if(!best)for(const id in S.home.f){const F=FURN[id];if(!F||F.wall)continue;const f=S.home.f[id],d=Math.hypot(P.x-R.x-f.x,P.z-R.z-f.z);
     if(d<(F.mr||Math.max(1.6,F.r+1.1))&&d<bd){bd=d;best={label:'Move '+F.short,fn:()=>pickUp(id)};}}
@@ -1296,6 +1370,7 @@ function qCount(id){return S.q[id].f?S.q[id].f.reduce((a,b)=>a+b,0):S.q[id].n;}
 function talk(id){
   if(id==='judge')return talkJudge();
   if(id==='trick')return openTrickShow();
+  if(id==='park')return openPark();
   const q=Q[id],st=S.q[id];let h=`<div class="tag">${q.who}</div>`;
   if(q.needDog&&!S.dogs.length){h+=`<h2>You need an ESSA first!</h2><p>Come back when you have a plush pup to walk. ValuMart sells them.</p><div class="row"><button class="btn" data-act="close">OK</button></div>`;}
   else if(st.s==='new'){h+=`<h2>Can you help me?</h2><p>${q.intro}</p><div class="row"><button class="btn" data-act="qstart" data-arg="${id}">I'll help!</button><button class="btn alt" data-act="close">Maybe later</button></div>`;}
@@ -1331,12 +1406,18 @@ function addItem(kind,x,z,extra={}){let m;
     for(const s of[-1,1]){const e=new THREE.Mesh(new THREE.SphereGeometry(.035,6,6),k);e.position.set(.1*s,.36,.33);m.add(e);}}
   else if(kind==='cupcake'){m=new THREE.Group();const lin=new THREE.Mesh(new THREE.CylinderGeometry(.24,.17,.26,12),mat(0xff5d8f));m.add(lin);
     const fr=new THREE.Mesh(new THREE.SphereGeometry(.25,12,10),mat(0xfffaf2));fr.position.y=.2;fr.scale.y=.8;m.add(fr);const ch=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),mat(0xe23b3b));ch.position.y=.42;m.add(ch);}
+  else if(kind==='egg'){m=new THREE.Group();const e=new THREE.Mesh(new THREE.SphereGeometry(.3,14,10),mat([0xff9ec7,0x7fd3ff,0xffe14d,0xb48cff][Math.floor(Math.random()*4)]));e.scale.set(1,1.3,1);m.add(e);
+    const b=new THREE.Mesh(new THREE.TorusGeometry(.3,.05,6,16),mat(0xffffff));b.rotation.x=Math.PI/2;m.add(b);}
+  else if(kind==='shell'){m=new THREE.Group();const sm=mat(0xffc8b0,{rough:.4});for(let i=0;i<7;i++){const f=new THREE.Mesh(new THREE.ConeGeometry(.09,.55,6),sm);f.position.set(0,0,0);f.rotation.z=(i-3)*.32;f.translateY(.2);m.add(f);}
+    const bs=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),sm);bs.position.y=-.06;m.add(bs);}
+  else if(kind==='pumpkin'){m=pumpkinMesh(.7,new Date().getMonth()===9);m.children.forEach(c=>c.position.y-=.3);}
+  else if(kind==='present'){m=presentMesh([0xe23b3b,0x2fbf8f,0x4fb3ff,0xb48cff][Math.floor(Math.random()*4)],.6);m.children.forEach(c=>c.position.y-=.25);}
   else if(kind==='mail'){m=new THREE.Group();m.rotation.y=extra.ry||0;const post=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,1.2,8),mat(0x8a5a3c));post.position.y=.6;m.add(post);
     const bx=new THREE.Mesh(new THREE.BoxGeometry(.55,.5,.9),mat(0x3b82f6,{metal:.3,rough:.4}));bx.position.y=1.4;m.add(bx);
     const fl=new THREE.Group();fl.position.set(.3,1.4,-.2);m.add(fl);const fm=new THREE.Mesh(new THREE.BoxGeometry(.04,.5,.12),mat(0xe23b3b));fm.position.y=.25;fl.add(fm);fl.rotation.x=extra.done?0:-Math.PI/2;m.userData.flag=fl;}
   m.traverse(o=>{if(o.isMesh)o.castShadow=true});
-  const it={kind,m,x,z,on:true,ph:Math.random()*6,baseY:kind==='flag'||kind==='mail'?0:kind==='flower'?.6:kind==='chick'?.35:kind==='duck'?.45:kind==='cupcake'?.45:1,...extra};m.position.set(x,it.baseY,z);scene.add(m);
-  if(kind==='bone'||kind==='flower'||kind==='chick'||kind==='duck'||kind==='cupcake'||kind==='mail'&&!extra.done){const beam=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,14,10,1,true),new THREE.MeshBasicMaterial({color:{bone:0xfff3a0,flower:0xff9ec0,chick:0xffe14d,duck:0x7fd3ff,cupcake:0xff8fb3,mail:0xffc53d}[kind],transparent:true,opacity:.3,depthWrite:false}));
+  const it={kind,m,x,z,on:true,ph:Math.random()*6,baseY:kind==='flag'||kind==='mail'?0:kind==='flower'?.6:kind==='chick'?.35:kind==='duck'?.45:kind==='cupcake'?.45:kind==='egg'||kind==='shell'||kind==='pumpkin'||kind==='present'?.55:1,...extra};m.position.set(x,it.baseY,z);scene.add(m);
+  if(kind==='bone'||kind==='flower'||kind==='chick'||kind==='duck'||kind==='cupcake'||extra.q==='sea'||kind==='mail'&&!extra.done){const beam=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,14,10,1,true),new THREE.MeshBasicMaterial({color:{bone:0xfff3a0,flower:0xff9ec0,chick:0xffe14d,duck:0x7fd3ff,cupcake:0xff8fb3,mail:0xffc53d,egg:0xffb3d1,shell:0xffd8a0,pumpkin:0xffa040,present:0xff6b6b}[kind],transparent:true,opacity:.3,depthWrite:false}));
     beam.position.set(x,7,z);scene.add(beam);it.beam=beam;}
   items.push(it);return it;}
 function spawnQuestItems(id){
@@ -1358,6 +1439,7 @@ function collect(it){
     toast(S.q.chicks.n>=5?'All 5 chicks found! Go back to Farmer Gus.':`Chick ${S.q.chicks.n} of 5`);}
   else if(it.kind==='cupcake'){S.q.cupcakes.n++;removeItem(it);beep(1500,.1,'triangle',.06,1.3);floatText('Yum!',it.m.position);toast(S.q.cupcakes.n>=5?'All 5 cupcakes! Bring them to Baker Bea.':`Cupcake ${S.q.cupcakes.n} of 5`);}
   else if(it.kind==='duck'){S.q.ducks.n++;removeItem(it);bark();floatText('Quack!',it.m.position);toast(S.q.ducks.n>=5?'All 5 rubber ducks! Bring them to Captain Mae.':`Rubber duck ${S.q.ducks.n} of 5`);}
+  else if(it.q==='sea')collectSea(it);
   else if(it.kind==='mail'){if(it.done||S.q.mail.s!=='active')return;it.done=true;S.q.mail.f[it.fi]=1;it.m.userData.flag.rotation.x=0;if(it.beam)it.beam.visible=false;jingle();
     const n=qCount('mail');toast(n>=4?'All 4 letters delivered! Go back to Postie Pip.':`Letter ${n} of 4 delivered!`);floatText('Mail!',it.m.position);}
   save();refreshHUD();}
@@ -1369,7 +1451,7 @@ function buildBall(){const g=new THREE.Group();mesh(new THREE.SphereGeometry(.24
   for(const r of[0,Math.PI/2]){const t=mesh(new THREE.TorusGeometry(.243,.03,6,24),mat(0xffe14d),0,0,0,g,false);t.rotation.set(Math.PI/2,r,0);}
   g.visible=false;scene.add(g);ball.m=g;}
 function ballReset(){if(ball.dog)ball.dog.fetching=false;ball.ph=null;ball.dog=null;if(ball.m)ball.m.visible=false;}
-const canThrow=()=>mode==='play'&&!paused&&!driving&&!inHome&&!ball.ph&&dogsW.length>0;
+const canThrow=()=>mode==='play'&&!paused&&!driving&&!inHome&&!ball.ph&&dogsW.length>0&&!photo&&!(PG&&PG.k==='hide');
 function throwBall(){if(!canThrow())return;audio();const P=player.position,a=player.rotation.y,dist=11+Math.random()*4;
   const to={x:P.x+Math.sin(a)*dist,z:P.z+Math.cos(a)*dist};collide(to,.5);
   ball.a.set(P.x+Math.sin(a)*.6,1.5,P.z+Math.cos(a)*.6);ball.b.set(to.x,.24,to.z);ball.t=0;ball.ph='fly';
@@ -1387,7 +1469,7 @@ function fetchMove(d,dt){const p=d.g.position,P=player.position;d.fetchT+=dt;con
   if(ball.ph==='ground'&&(dist<1||d.fetchT>9)){if(dist>=1)p.set(ball.b.x-dx/dist*.6,0,ball.b.z-dz/dist*.6);ball.ph='carry';ball.t=0;d.fetchT=0;bark();}
   else if(back&&(dist<2||d.fetchT>14))fetchDone(d);
   return v;}
-function fetchDone(d){ballReset();S.st.fetch++;earn(3);coinSnd();hearts(d.g.position.clone().setY(2));d.jump=1;floatText('+3',d.g.position);
+function fetchDone(d){ballReset();S.st.fetch++;earn(3);addJoy(S.dogs[d.idx],5);coinSnd();hearts(d.g.position.clone().setY(2));d.jump=1;floatText('+3',d.g.position);
   toast(['Good catch, ','Nice fetch, ','Woohoo, ','Great job, '][S.st.fetch%4]+d.name+'!');refreshHUD();}
 function turnTo(g,dx,dz,k){let da=Math.atan2(dx,dz)-g.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));g.rotation.y+=da*Math.min(1,k);}
 
@@ -1401,7 +1483,7 @@ function buildDigs(){const dirt=mat(0x8a5a3c,{flat:true}),peb=mat(0xb89a7a,{flat
     for(const [x,z] of[[.5,.3],[-.45,.4],[.1,-.55]])mesh(new THREE.IcosahedronGeometry(.11,0),peb,x,.08,z,g,false);
     const sp=sprite('✦',{w:96,h:96,size:84,fg:'#ffe14d',stroke:'#fff'});sp.scale.set(.9,.9,1);sp.position.y=1.2;g.add(sp);
     const s={g,sp,x:0,z:0,ph:i};placeDig(s);digs.push(s);}}
-function digUpdate(dt,P){const sniffers=driving||inHome?[]:dogsW.filter(d=>!d.fetching);
+function digUpdate(dt,P){const sniffers=driving||inHome||photo||PG?[]:dogsW.filter(d=>!d.fetching);
   for(const s of digs){if(!s.on){if(clock>s.back)placeDig(s);continue;}
     const d2=(P.x-s.x)**2+(P.z-s.z)**2;
     if(!s.found&&sniffers.length&&d2<DIG_SEE*DIG_SEE){const d=sniffers.find(x=>!x.sniff)||sniffers[0];s.found=true;s.g.visible=true;d.sniff=s;bark();
@@ -1464,6 +1546,253 @@ const TS_ACTS={
     setTimeout(()=>{if(!TS||wrap.hidden)return;TS.round++;TS.seq.push(TRICKS[Math.floor(Math.random()*4)][0]);tsSheet();tsPlay();},900);}
 };
 
+/* ---------- pet care: brushing, baths and treats fill each ESSA's hearts ---------- */
+// joy is 0-100 (5 hearts). It drifts down slowly while you play; hugs, fetch, care and bedtime fill it back up.
+const CARE={brush:{ic:'🪮',l:'Brush',taps:6,joy:15,wait:120,fx:'✨',go:'Brush, brush!',msg:n=>`${n} is soft and shiny!`},
+  bath:{ic:'🛁',l:'Bath',taps:8,joy:25,wait:300,fx:'🫧',go:'Scrub-a-dub!',msg:n=>`${n} is squeaky clean!`},
+  treat:{ic:'🦴',l:'Treat',taps:1,joy:20,wait:90,cost:2,fx:'💖',go:'Yum!',msg:n=>`${n} loved the treat!`}};
+let careI=0,careK=null,careN=0;const sadSaid={};
+const heartsTxt=j=>{const n=Math.round((j??70)/20);return'♥'.repeat(n)+'♡'.repeat(5-n);};
+function addJoy(info,n){if(!info)return;const was=info.joy??70;info.joy=Math.max(0,Math.min(100,was+n));
+  if(was<100&&info.joy>=100&&n>0){earn(10);toast(`${info.name} is super happy! +10 paw coins`);jingle();}}
+const careLeft=(info,k)=>Math.max(0,Math.ceil(CARE[k].wait-(Date.now()-((info.care&&info.care[k])||0))/1000));
+const fmtWait=s=>s>=60?`ready in ${Math.ceil(s/60)} min`:`ready in ${s}s`;
+function openCare(i){if(i!=null&&+i!==careI){careI=+i;careK=null;}const info=S.dogs[careI];if(!info)return openBox();info.care=info.care||{};
+  openSheet(`<div class="tag">Care · ${DOGS[info.type].label}</div><h2>${esc(info.name)}</h2><div class="pvbox"><div class="fxl" id="careFx"></div></div>
+    <p class="hearts" aria-label="${Math.round(info.joy??70)} percent happy">${heartsTxt(info.joy)}</p>
+    <p class="keys" id="careMsg">${careK?`${CARE[careK].go} Keep tapping ${CARE[careK].l}.`:'Brush, bathe and give treats to fill up the hearts. Happy ESSAs wag extra fast!'}</p>
+    <div class="trks">${Object.entries(CARE).map(([k,c])=>{const w=careK===k?0:careLeft(info,k);
+      return`<button class="trk" data-act="care" data-arg="${k}" ${w?'disabled':''}>${c.ic} ${c.l}${c.cost?` · ${c.cost} coins`:''}${w?`<small>${fmtWait(w)}</small>`:''}</button>`;}).join('')}</div>
+    <div class="row"><button class="btn alt" data-act="rename" data-arg="${careI}">Rename</button>${S.dogs.length>1?'<button class="btn alt" data-act="careNav" data-arg="1">Next ESSA ›</button>':''}<button class="btn" data-act="box">Done</button></div>`,'shop');
+  pvShow('c:'+careI+JSON.stringify(info.gear||{}),()=>{const d=buildDog(info.type);dressWith(d,info.gear||{});return d;});mountBox();}
+function careFx(e){const box=$('careFx');if(!box)return;const s=document.createElement('span');s.textContent=e;s.style.left=(15+Math.random()*70)+'%';box.appendChild(s);setTimeout(()=>s.remove(),1000);}
+const CARE_ACTS={
+  careOpen:i=>{careK=null;openCare(+i);},
+  careNav:d=>{const n=S.dogs.length;careK=null;openCare(((careI+(+d))%n+n)%n);},
+  care:k=>{const info=S.dogs[careI],c=CARE[k];if(!info||!c)return;
+    if(careK!==k){if(careLeft(info,k))return;if(c.cost&&S.coins<c.cost){$('careMsg').textContent=`You need ${c.cost} paw coins for a treat. Find coins around town!`;return;}careK=k;careN=0;}
+    careN++;careFx(c.fx);careFx(c.fx);if(PV){PV.still=true;PV.trick={k:k==='bath'?'spin':k==='treat'?'jump':'sit',t:0};}beep(700+careN*60,.06,'triangle',.05);
+    if(careN<c.taps){$('careMsg').textContent=`${c.go} ${careN} of ${c.taps}`;return;}
+    if(c.cost)S.coins-=c.cost;info.care[k]=Date.now();careK=null;S.st[k]=(S.st[k]||0)+1;addJoy(info,c.joy);bark();for(let i=0;i<4;i++)setTimeout(()=>careFx('💖'),i*120);
+    $('careMsg').textContent=c.msg(info.name);save();refreshHUD();
+    setTimeout(()=>{if(!wrap.hidden&&$('careFx'))keepScroll(()=>openCare());},1100);},
+  rename:i=>{const info=S.dogs[+i];if(!info)return;
+    openSheet(`<div class="tag">${DOGS[info.type].label}</div><h2>A new name for ${esc(info.name)}</h2><div class="pvbox"></div>
+      <input type="text" id="dogName" maxlength="12" value="${esc(info.name)}" aria-label="New name">
+      <div class="row"><button class="btn" data-act="renameOk" data-arg="${i}">Save name</button><button class="btn alt" data-act="careOpen" data-arg="${i}">Cancel</button></div>`);
+    pvShow('c:'+i+JSON.stringify(info.gear||{}),()=>{const d=buildDog(info.type);dressWith(d,info.gear||{});return d;});mountBox();
+    const el=$('dogName');el.select();el.addEventListener('keydown',e=>{if(e.key==='Enter')CARE_ACTS.renameOk(i);});},
+  renameOk:i=>{const info=S.dogs[+i],el=$('dogName');if(!info||!el)return;const n=el.value.trim().slice(0,12);
+    if(n&&n!==info.name){const old=info.name;info.name=n;S.st.rename++;respawnDogs();if(inHome)homeDogsBuild();save();toast(`${old} is now called ${n}!`);refreshHUD();}
+    careK=null;openCare(+i);}
+};
+// every 10 seconds of play: hearts drift down a little, and a sad ESSA asks for some care once
+function joyTick(){S.dogs.forEach((d,i)=>{d.joy=Math.max(0,(d.joy??70)-.5);
+  if(d.joy<25&&!sadSaid[i]){sadSaid[i]=1;toast(`${d.name} would love some care. Open the toy box and tap Care!`);}if(d.joy>40)sadSaid[i]=0;});}
+
+/* ---------- bedtime in the Dream Home ---------- */
+let lastBed=-1e9;
+const isNight=()=>{const t=dayT;return smooth(.56,.68,t)*(1-smooth(.86,.97,t))>.5;};
+function sleepOn(html){const o=$('sleep');o.innerHTML=html;o.classList.add('on');}
+function sleepOff(){$('sleep').classList.remove('on');}
+function lullaby(){if(!SET.sound)return;audio();if(!ac||!musicBus())return;[76,79,84,79,77,76,74,72].forEach((m,i)=>setTimeout(()=>pluck(m,.05,1.6),i*400));}
+function bedtime(){if(!S.dogs.length)return toast('Bring home an ESSA first!');
+  const bonus=SET.daynight?isNight():clock-lastBed>300;lastBed=clock;closeSheet();paused=true;
+  const names=S.dogs.map(d=>esc(d.name)),list=names.length>3?names.slice(0,3).join(', ')+' and everyone':names.length>1?names.slice(0,-1).join(', ')+' and '+names[names.length-1]:names[0];
+  sleepOn(`<div><div class="zz">💤</div><b>Goodnight, ${list}!</b><small>Sweet dreams…</small></div>`);lullaby();
+  setTimeout(()=>{if(SET.daynight)dayT=.03;S.dogs.forEach(d=>addJoy(d,25));let c=0;if(bonus){c=Math.min(30,3*S.dogs.length);earn(c);S.st.bed++;}
+    sleepOff();paused=!wrap.hidden||mode!=='play';homeDogs.forEach(d=>d.jump=1);
+    toast(bonus?`Good morning! Everyone slept so well. +${c} paw coins`:'What a cozy nap! The bedtime bonus comes when the stars are out.');save();refreshHUD();},3800);}
+
+/* ---------- photo mode ---------- */
+// Your character turns to face the camera, the ESSAs line up beside you, and Snap saves a framed picture.
+let photo=null,lastPhoto=null;const POSES=[['wave','Wave'],['cheer','Cheer'],['hug','Big hug'],['dance','Dance']];
+function enterPhoto(){if(mode!=='play'||driving||!wrap.hidden||photo||PG)return;audio();photo={pose:0,z:camZoom,p:camPitch};camZoom=inHome?.6:.42;camPitch=.3;camYaw=player.rotation.y;
+  document.body.classList.add('photo');$('photoUi').hidden=false;poseLbl();dogsW.forEach(d=>d.jump=1);}
+function exitPhoto(){if(!photo)return;camZoom=photo.z;camPitch=photo.p;photo=null;document.body.classList.remove('photo');$('photoUi').hidden=true;
+  player.userData.arms.forEach(a=>{a.rotation.z=0;});}
+function poseLbl(){$('poseBtn').textContent='Pose: '+POSES[photo.pose][1];}
+function photoSlot(i,P,a){const f=[[1.5,.7],[-1.5,.7],[2.8,.1],[-2.8,.1]][i]||[0,1.5],c=Math.cos(a),s=Math.sin(a);return{x:P.x+f[0]*c+f[1]*s,z:P.z-f[0]*s+f[1]*c};}
+function photoPose(){const U=player.userData,[L,R]=U.arms,k=POSES[photo.pose][0],t=clock;L.rotation.x=R.rotation.x=0;L.rotation.z=R.rotation.z=0;player.position.y=0;
+  U.legs[0].rotation.x=U.legs[1].rotation.x=0;
+  if(k==='wave'){R.rotation.z=2.5+Math.sin(t*9)*.35;}
+  else if(k==='cheer'){L.rotation.z=-2.7;R.rotation.z=2.7;player.position.y=Math.abs(Math.sin(t*5))*.18;}
+  else if(k==='hug'){L.rotation.x=R.rotation.x=-1.35;L.rotation.z=.35;R.rotation.z=-.35;}
+  else{const w=Math.sin(t*6);L.rotation.z=-1.2-w*.8;R.rotation.z=1.2-w*.8;U.legs[0].rotation.x=w*.4;U.legs[1].rotation.x=-w*.4;player.position.y=Math.abs(w)*.1;}}
+function snapPhoto(){if(!photo)return;renderer.render(scene,camera);let src;try{src=renderer.domElement.toDataURL('image/jpeg',.92);}catch(e){return toast('This browser will not let the game take pictures.');}
+  const fl=$('flash');fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');
+  if(SET.sound){audio();beep(1800,.04,'square',.05);setTimeout(()=>beep(1200,.06,'square',.05),60);}dogsW.forEach(d=>d.jump=1);setTimeout(bark,200);
+  S.st.photo++;const img=new Image();img.onload=()=>{lastPhoto=framePhoto(img);showPhoto();refreshHUD();save();};img.src=src;}
+function framePhoto(img){const W=img.width,H=img.height,m=Math.min(W,H),b=Math.round(m*.035),cap=Math.round(m*.13),c=document.createElement('canvas');c.width=W+b*2;c.height=H+b+cap;
+  const k=c.getContext('2d');k.fillStyle='#fffaf2';k.fillRect(0,0,c.width,c.height);k.drawImage(img,b,b);k.strokeStyle='#ece4f7';k.lineWidth=Math.max(2,b*.15);k.strokeRect(b,b,W,H);
+  k.textBaseline='middle';k.fillStyle='#7b4fd6';k.font=`${Math.round(cap*.44)}px "Lilita One",sans-serif`;k.fillText('Puppy Quest',b,H+b+cap*.52);
+  const names=dogsW.map(d=>d.name),who=names.length?(names.length>1?names.slice(0,-1).join(', ')+' & '+names[names.length-1]:names[0]):'';
+  const date=new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  k.fillStyle='#6a5f80';k.textAlign='right';k.font=`800 ${Math.round(cap*.24)}px Nunito,sans-serif`;k.fillText(who?`${who} · ${date}`:date,c.width-b,H+b+cap*.52,c.width*.55);
+  return c.toDataURL('image/jpeg',.9);}
+function showPhoto(){const share=!!(navigator.canShare&&window.File);
+  openSheet(`<div class="tag">Say cheese!</div><h2>Your picture</h2><img class="photoImg" src="${lastPhoto}" alt="Your picture from photo mode">
+    <p class="keys">${window.PQAndroid?'Save puts the picture in your phone\'s Photos.':'Tap Save, or press and hold the picture to save it.'}</p>
+    <div class="row"><button class="btn" data-act="phSave">Save to phone</button>${share?'<button class="btn alt" data-act="phShare">Share</button>':''}<button class="btn alt" data-act="close">Take another</button><button class="btn alt" data-act="phDone">Done</button></div>`);}
+const photoName=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return`puppy-quest-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.jpg`;};
+const PHOTO_ACTS={
+  phSave:()=>{if(!lastPhoto)return;const name=photoName();
+    if(window.PQAndroid&&PQAndroid.savePhoto){let r='error';try{r=PQAndroid.savePhoto(lastPhoto.split(',')[1],name);}catch(e){}
+      toast(r==='ok'?'Saved! Find it in your Photos, in the Puppy Quest album.':r==='ask'?'Tap Allow, then tap Save again.':'Sorry, the picture could not be saved.');return;}
+    const a=document.createElement('a');a.href=lastPhoto;a.download=name;document.body.appendChild(a);a.click();a.remove();toast('Picture saved! Look in your Downloads.');},
+  phShare:async()=>{try{const b=await (await fetch(lastPhoto)).blob(),f=new File([b],photoName(),{type:'image/jpeg'});
+    if(navigator.canShare({files:[f]}))await navigator.share({files:[f],title:'Puppy Quest'});else PHOTO_ACTS.phSave();}catch(e){}},
+  phDone:()=>{closeSheet();exitPhoto();}
+};
+
+/* ---------- seasons ---------- */
+// The season follows the calendar (or the Season setting). It changes the leaves, the ground, falling snow, leaves or petals,
+// decorations around town, a hunt for 8 hidden things that wins a seasonal hat, and one item Fetch & Fancy sells only then.
+const SEASONS={
+  spring:{name:'Spring',ic:'🌷',item:'egg',items:'painted eggs',one:'Egg',gear:'bunnyears',fx:{n:160,c:0xffb3d1,s:.24,v:1.1}},
+  summer:{name:'Summer',ic:'☀️',item:'shell',items:'seashells',one:'Seashell',gear:'melonhat',fx:null},
+  autumn:{name:'Autumn',ic:'🍂',item:'pumpkin',items:'mini pumpkins',one:'Pumpkin',gear:'pumpkinhat',fx:{n:130,c:0xe8892a,s:.34,v:1.5}},
+  winter:{name:'Winter',ic:'❄️',item:'present',items:'presents',one:'Present',gear:'antlers',fx:{n:520,c:0xffffff,s:.22,v:2.3}}};
+const SEA_ORDER=['auto','spring','summer','autumn','winter'];
+const autoSeason=()=>{const m=new Date().getMonth();return m<2||m===11?'winter':m<5?'spring':m<8?'summer':'autumn';};
+const season=()=>SEASONS[SET.season]?SET.season:autoSeason();
+const seaKey=()=>{const d=new Date();return(d.getMonth()<2?d.getFullYear()-1:d.getFullYear())+'-'+season();};
+const seaN=()=>S.sea[seaKey()]||0;
+const LEAF={NormalTree_Leaves:{autumn:[0xf08a24,.8],winter:[0xf4f8ff,.55],spring:[0xffc2dc,.35]},MapleTree_Leaves:{autumn:[0xe0402a,.85],winter:[0xf4f8ff,.6],spring:[0xff9ec7,.75]},
+  BirchTree_Leaves:{autumn:[0xffc83a,.85],winter:[0xf4f8ff,.6],spring:[0xc8f080,.4]},PineTree_Leaves:{winter:[0xf4f8ff,.4]},Bush_Leaves:{autumn:[0xd0903a,.35],winter:[0xf4f8ff,.5],spring:[0xffc2dc,.15]},
+  Grass:{autumn:[0xc9a94a,.3],winter:[0xf4f8ff,.75]}};
+let natureMats=null,groundMesh=null,seaFx=null,seaDecor=null,seaNow=null;
+// recolor leaves in the shader: mix the painted texture toward the season's color, keeping its light and dark
+function seaShader(mats){for(const k in LEAF){const m=mats[k];if(!m)continue;m.userData.sea={c:{value:new THREE.Color(1,1,1)},a:{value:0}};
+  m.onBeforeCompile=sh=>{sh.uniforms.uSeaC=m.userData.sea.c;sh.uniforms.uSeaA=m.userData.sea.a;
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 uSeaC;uniform float uSeaA;')
+      .replace('#include <map_fragment>','#include <map_fragment>\n{float lum=dot(diffuseColor.rgb,vec3(.3,.59,.11));diffuseColor.rgb=mix(diffuseColor.rgb,uSeaC*(.42+lum*1.35),uSeaA);}');};
+  m.needsUpdate=true;}}
+function applySeason(force){const s=season();if(s===seaNow&&!force)return;seaNow=s;
+  if(groundMesh){const old=groundMesh.material.map;groundMesh.material.map=groundTex(s);groundMesh.material.needsUpdate=true;if(old)old.dispose();}
+  {const pm=matCache[0x7cc45a+'{}'];if(pm)pm.color.set(s==='winter'?0xe6eef6:s==='autumn'?0x9cbc58:0x7cc45a);}
+  if(natureMats)for(const k in LEAF){const m=natureMats[k];if(!m||!m.userData.sea)continue;const v=LEAF[k][s];m.userData.sea.c.value.set(v?v[0]:0xffffff);m.userData.sea.a.value=v?v[1]:0;}
+  buildSeaFx(SEASONS[s].fx);buildSeaDecor(s);}
+function buildSeaFx(o){if(seaFx){scene.remove(seaFx);seaFx.geometry.dispose();seaFx=null;}if(!o)return;
+  const p=new Float32Array(o.n*3);for(let i=0;i<o.n;i++){p[i*3]=(Math.random()-.5)*64;p[i*3+1]=Math.random()*26;p[i*3+2]=(Math.random()-.5)*64;}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  seaFx=new THREE.Points(g,new THREE.PointsMaterial({color:o.c,size:o.s,transparent:true,opacity:.9,depthWrite:false}));seaFx.userData.v=o.v;seaFx.frustumCulled=false;scene.add(seaFx);}
+function seaFxUpdate(dt){if(!seaFx)return;seaFx.visible=!inHome&&mode==='play';if(!seaFx.visible)return;const C=camera.position,P=seaFx.geometry.attributes.position,a=P.array,v=seaFx.userData.v;
+  seaFx.position.set(Math.round(C.x),0,Math.round(C.z));
+  for(let i=0;i<a.length;i+=3){a[i+1]-=v*dt*(.7+(i%7)*.08);a[i]+=Math.sin(clock*.9+i)*dt*.7;if(a[i+1]<0){a[i+1]+=26;a[i]=(Math.random()-.5)*64;a[i+2]=(Math.random()-.5)*64;}}P.needsUpdate=true;}
+function buildSeaDecor(s){if(seaDecor){scene.remove(seaDecor);seaDecor.traverse(o=>{if(o.geometry)o.geometry.dispose();});}const g=new THREE.Group();seaDecor=g;scene.add(g);
+  const m=new Date().getMonth(),put=(o,x,z,ry=0)=>{o.position.set(x,0,z);o.rotation.y=ry;g.add(o);return o;};
+  const porch=HOUSES.slice(0,17).map(h=>houseFront(h,4.6,-3.2));
+  if(s==='autumn'){porch.forEach((p,i)=>put(pumpkinMesh(.55+(i%3)*.12,m===9),p.x,p.z,p.ry));
+    for(const [x,z] of[[-5,30],[5,30]]){const hb=new THREE.Group();mesh(new THREE.BoxGeometry(1.6,.8,1),mat(0xe8c56a,{rough:1}),0,.4,0,hb);put(hb,x,z);put(pumpkinMesh(.5,m===9),x,z).position.y=.8;}
+    seed=31;for(let i=0;i<14;i++){const a=rnd()*Math.PI*2,r=17+rnd()*6,lp=new THREE.Group();for(let j=0;j<5;j++)mesh(new THREE.SphereGeometry(.45,8,6),mat([0xe0702a,0xc9502a,0xf0a030][j%3],{flat:true}),(rnd()-.5)*1.2,.05,(rnd()-.5)*1.2,lp,false).scale.set(1,.3,1);put(lp,Math.cos(a)*r,18+Math.sin(a)*r);}}
+  if(s==='winter'){for(const [x,z] of[[-16,2.5],[16,2.5],[-14,28],[14,28],[-82,-27],[8,-27],[82,-27],[-28,84]])put(snowman(),x,z,Math.atan2(-x,18-z));
+    if(m===11)for(let i=0;i<7;i++){const a=i/7*Math.PI*2;put(presentMesh([0xe23b3b,0x2fbf8f,0x4fb3ff,0xffc53d][i%4],.7),Math.cos(a)*4.6,18+Math.sin(a)*4.6,a);}}
+  if(s==='spring')porch.forEach((p,i)=>{const fb=new THREE.Group();for(let j=0;j<5;j++)flowerMesh((j-2)*.45,0,[0xff9ec7,0xffe14d,0xb48cff,0xffffff,0xff7a6b][(i+j)%5],.4,fb);put(fb,p.x,p.z,p.ry);});
+  if(s==='summer'){porch.forEach((p,i)=>{if(i%2)return;const fb=new THREE.Group();for(let j=0;j<3;j++){const f=flowerMesh((j-1)*.6,0,0xffd23f,.95,fb);f.children.slice(1,6).forEach(c=>c.scale.setScalar(1.3));}put(fb,p.x,p.z,p.ry);});
+    for(const [x,z,c] of[[POND.x+13,POND.z-6,0xff5d8f],[POND.x+14,POND.z+5,0x4fb3ff]])put(umbrella(c),x,z);}
+  bake(g);}
+function pumpkinMesh(s,face){const g=new THREE.Group(),o=mat(0xff8a2a),k=mat(0x3a2414);const b=mesh(new THREE.SphereGeometry(.5*s,14,10),o,0,.42*s,0,g);b.scale.set(1.2,.85,1.2);
+  for(let i=0;i<5;i++){const r=mesh(new THREE.TorusGeometry(.5*s,.035*s,5,16),mat(0xe0701a),0,.42*s,0,g,false);r.rotation.y=i/5*Math.PI;r.scale.set(1.2,.85,1.2);}
+  mesh(new THREE.CylinderGeometry(.05*s,.08*s,.25*s,6),mat(0x4a7a2a),0,.85*s,0,g);
+  if(face){const y=mat(0xffd84a,{em:0xffa020,emI:.9});for(const sx of[-1,1]){const e=mesh(new THREE.ConeGeometry(.1*s,.14*s,3),y,.18*s*sx,.5*s,.58*s,g,false);e.rotation.x=Math.PI/2;}
+    const sm=mesh(new THREE.TorusGeometry(.2*s,.04*s,5,12,Math.PI),y,0,.36*s,.58*s,g,false);sm.rotation.z=Math.PI;}
+  return g;}
+function snowman(){const g=new THREE.Group(),w=mat(0xffffff,{rough:.9});mesh(new THREE.SphereGeometry(.8,16,12),w,0,.7,0,g);mesh(new THREE.SphereGeometry(.58,16,12),w,0,1.75,0,g);mesh(new THREE.SphereGeometry(.42,14,10),w,0,2.55,0,g);
+  const k=mat(0x222222);for(const s of[-1,1])mesh(new THREE.SphereGeometry(.05,6,6),k,.15*s,2.65,.38,g,false);for(const y of[1.95,1.7,1.45])mesh(new THREE.SphereGeometry(.06,6,6),k,0,y,.56,g,false);
+  const n=mesh(new THREE.ConeGeometry(.07,.36,8),mat(0xff8a2a),0,2.55,.55,g,false);n.rotation.x=Math.PI/2;
+  const sc=mesh(new THREE.TorusGeometry(.42,.09,6,16),mat(0xe23b3b),0,2.18,0,g);sc.rotation.x=Math.PI/2;mesh(new THREE.BoxGeometry(.18,.5,.08),mat(0xe23b3b),.2,1.95,.42,g);
+  mesh(new THREE.CylinderGeometry(.42,.42,.04,16),k,0,2.88,0,g);mesh(new THREE.CylinderGeometry(.28,.28,.4,16),k,0,3.1,0,g);
+  for(const s of[-1,1]){const a=mesh(new THREE.CylinderGeometry(.03,.03,.9,5),mat(0x6b4a2f),.75*s,1.95,0,g,false);a.rotation.z=-1*s;}return g;}
+function presentMesh(c,s){const g=new THREE.Group();mesh(new THREE.BoxGeometry(s,s*.8,s),mat(c),0,s*.4,0,g);const r=mat(0xfffaf2);mesh(new THREE.BoxGeometry(s*1.02,s*.82,s*.16),r,0,s*.4,0,g,false);mesh(new THREE.BoxGeometry(s*.16,s*.82,s*1.02),r,0,s*.4,0,g,false);
+  for(const sx of[-1,1]){const b=mesh(new THREE.TorusGeometry(s*.13,s*.04,5,10),r,sx*s*.12,s*.86,0,g,false);b.rotation.y=Math.PI/2;}return g;}
+function umbrella(c){const g=new THREE.Group();mesh(new THREE.CylinderGeometry(.05,.05,2.6,6),mat(0xffffff),0,1.3,0,g);const t=mesh(new THREE.ConeGeometry(1.8,.7,10),mat(c),0,2.5,0,g);t.castShadow=true;
+  mesh(new THREE.BoxGeometry(1.1,.04,2),mat(0xffe14d),1.3,.03,.4,g,false);return g;}
+function spawnSeaHunt(){items.filter(i=>i.q==='sea').forEach(i=>{removeItem(i);items.splice(items.indexOf(i),1);});const n=seaN();if(n>=8)return;
+  const kind=SEASONS[season()].item;for(let i=n;i<8;i++){const p=randPos(3,110);addItem(kind,p.x,p.z,{q:'sea'});}}
+function collectSea(it){const s=SEASONS[season()],k=seaKey();S.sea[k]=(S.sea[k]||0)+1;removeItem(it);beep(1400,.08,'triangle',.06,1.4);floatText(s.one+'!',it.m.position);const n=S.sea[k];
+  if(n<8)return toast(`${s.one} ${n} of 8`);S.st.hunt++;jingle();burst(player.position.clone().setY(2),70);const G=GEAR[s.gear];
+  if(!owns(s.gear)){giveGear(s.gear,true);dressAll();openSheet(`<div class="tag">${s.ic} ${s.name} hunt</div><h2>You found all 8 ${s.items}!</h2><div class="pvbox"></div><p>Your prize is the <b>${G.name}</b>. You can only win it in ${s.name.toLowerCase()}, and your ESSA is wearing it now!</p><div class="row"><button class="btn" data-act="close">Woohoo!</button></div>`,'shop');
+    pvShow('sea:'+s.gear,()=>{const d=buildDog(pvDogType());dressWith(d,{head:s.gear});return d;});mountBox();}
+  else{earn(40);toast(`All 8 ${s.items} found! You already have the ${G.name}, so here are 40 paw coins.`);}}
+const seaLabel=()=>SEASONS[SET.season]?SEASONS[SET.season].name:`Auto (${SEASONS[autoSeason()].name})`;
+
+/* ---------- Paw Park games ---------- */
+// Ranger Rae runs three games in the park on Meadow Ln: an agility course, hide and seek with your ESSAs, and balloon pop.
+const PARK={x:75,z:104,x0:59,x1:91,z0:87,z1:122,gx:66};
+const inPark=(x,z,p=0)=>x>PARK.x0-p&&x<PARK.x1+p&&z>PARK.z0-p&&z<PARK.z1+p;
+const HOOPS=[],BUSHES=[],balloons=[];let PG=null,pgUiT=0;
+const PGAMES={agility:{ic:'🏁',name:'Agility Course',time:45,bit:1,desc:'Run through all 8 hoops in order before the time runs out. Follow the yellow arrow!'},
+  hide:{ic:'🙈',name:'Hide and Seek',time:60,bit:2,dog:true,desc:'Your ESSAs hide behind the bushes. Can you find them all? Walk close to each one.'},
+  balloon:{ic:'🎈',name:'Balloon Pop',time:40,bit:4,desc:'Walk into balloons to pop them. Gold balloons are worth 5 coins, and your ESSAs can pop them too!'}};
+function buildPark(){const g=new THREE.Group();scene.add(g);const {x0,x1,z0,z1,gx}=PARK;noTree.push({x0:x0-2,x1:x1+2,z0:z0-4,z1:z1+2});
+  flatRect(x1-x0,z1-z0,0x8fd16a,PARK.x,(z0+z1)/2,.012);flatRect(3,z0-78.5+1,0xe9dcc0,gx,(z0+78.5)/2,.018);
+  const hm=mat(0x3f9e48,{flat:true}),hg=new THREE.BoxGeometry(1.2,1,1.1);
+  const hedge=(x,z)=>{mesh(hg,hm,x,.5,z,g);circles.push({x,z,r:.62});};
+  for(let x=x0;x<=x1;x+=1.2){if(Math.abs(x-gx)>2.6)hedge(x,z0);hedge(x,z1);}for(let z=z0+1.2;z<z1;z+=1.2){hedge(x0,z);hedge(x1,z);}
+  // the gate arch
+  const wd=mat(0x9a6232);for(const s of[-1,1]){mesh(new THREE.CylinderGeometry(.16,.18,3.6,8),wd,gx+2.6*s,1.8,z0,g);circles.push({x:gx+2.6*s,z:z0,r:.25});}
+  mesh(new THREE.BoxGeometry(6,.3,.3),wd,gx,3.5,z0,g);const sg=new THREE.Mesh(new THREE.PlaneGeometry(4,1),new THREE.MeshBasicMaterial({map:textTex('Paw Park',{w:512,h:128,bg:'#2fbf8f',fg:'#fffaf2',size:76})}));
+  sg.position.set(gx,4.2,z0-.05);sg.rotation.y=Math.PI;scene.add(sg);const sb=sg.clone();sb.position.z=z0+.05;sb.rotation.y=0;scene.add(sb);
+  // agility hoops around a loop
+  for(let i=0;i<8;i++){const a=-Math.PI/2+i/8*Math.PI*2,x=PARK.x+Math.cos(a)*11,z=PARK.z+Math.sin(a)*13,tx=-Math.sin(a)*11,tz=Math.cos(a)*13;
+    const h=new THREE.Group();h.position.set(x,0,z);h.rotation.y=Math.atan2(tx,tz);cullAdd(h,x,z,110);scene.add(h);const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.5,emissive:0x000000});
+    const ar=new THREE.Mesh(new THREE.TorusGeometry(1.5,.12,8,24,Math.PI),m);ar.position.y=.9;h.add(ar);
+    for(const s of[-1,1]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.9,8),m);p.position.set(1.5*s,.45,0);h.add(p);circles.push({x:x+Math.cos(h.rotation.y)*1.5*s,z:z-Math.sin(h.rotation.y)*1.5*s,r:.15});}
+    const n=sprite(String(i+1),{w:96,h:96,size:80,fg:'#ffc53d',stroke:'#2a2140'});n.scale.set(.9,.9,1);n.position.set(x,3,z);n.visible=false;scene.add(n);HOOPS.push({x,z,m,n});}
+  // bushes to hide behind
+  const bm=mat(0x4caf50,{flat:true}),bm2=mat(0x3f9e48,{flat:true});
+  for(const [x,z] of[[70,99],[80,99],[75,111],[68.5,106],[81.5,106],[87,90],[63,118],[87,118],[88,97],[62,110]]){
+    for(const [dx,dy,dz,r] of[[0,.9,0,1.1],[.8,.7,.3,.8],[-.7,.65,-.2,.85],[.1,1.5,.1,.7]])mesh(new THREE.IcosahedronGeometry(r,1),(dx>0?bm:bm2),x+dx,dy,z+dz,g);
+    circles.push({x,z,r:1.2});const dx=x-PARK.x,dz=z-PARK.z,dd=Math.hypot(dx,dz)||1,away=dd<9?-1:1;BUSHES.push({x,z,hx:x+dx/dd*1.9*away,hz:z+dz/dd*1.9*away});}
+  for(const x of[70,80])bench(x,120.3,Math.PI);
+  bake(g);cullAdd(g,PARK.x,PARK.z,120);}
+function openPark(){const best={agility:S.st.agBest?`Best: ${S.st.agBest.toFixed(1)} seconds`:'',hide:S.st.hideAll?`Found everyone ${S.st.hideAll} time${S.st.hideAll>1?'s':''}`:'',balloon:S.st.popBest?`Best: ${S.st.popBest} balloons`:''};
+  const out=dogsW.length;
+  openSheet(`<div class="tag">Ranger Rae</div><h2>Welcome to Paw Park!</h2><p>Pick a game. Every game earns paw coins.</p>
+    ${Object.entries(PGAMES).map(([k,G])=>`<div class="card"><h3>${G.ic} ${G.name}</h3><p>${G.desc}</p>${best[k]?`<small class="keys">${best[k]}</small>`:''}
+      ${G.dog&&!out?`<p class="keys">Bring an ESSA along from your toy box to play.</p>`:`<div class="row"><button class="btn" data-act="pgStart" data-arg="${k}">Play</button></div>`}</div>`).join('')}
+    <div class="row"><button class="btn alt" data-act="close">Maybe later</button></div>`);}
+function pgShow(t){$('pgT').textContent=t;}
+function pgStart(k){const G=PGAMES[k];if(!G||driving||photo)return;if(G.dog&&!dogsW.length)return openPark();closeSheet();if(PG)pgEnd('quiet');ballReset();dogsW.forEach(d=>{d.sniff=null;});
+  PG={k,t:G.time,n:0,cd:3.4,cs:0,sp:0,found:0,hid:0,coins:0};document.body.classList.add('pg');$('pgBar').hidden=false;
+  if(k==='agility'){HOOPS.forEach(h=>{h.m.color.set(0xffffff);h.m.emissive.set(0);h.n.visible=true;});hoopNext();}
+  if(k==='hide'){const sp=BUSHES.slice().sort(()=>Math.random()-.5);dogsW.forEach((d,i)=>{const b=sp[i];d.hide={x:b.hx,z:b.hz};d.g.position.set(b.hx,0,b.hz);d.g.rotation.y=Math.random()*6;d.leash.forEach(m=>m.visible=false);});
+    PG.hid=dogsW.length;sleepOn(`<div><div class="zz">🙈</div><b>Close your eyes and count!</b><small>Your ESSAs are hiding…</small></div>`);}}
+function hoopNext(){const h=HOOPS[PG.n];if(!h)return;h.m.color.set(0xffc53d);h.m.emissive.set(0x664400);}
+function pgUpdate(dt,P){if(!PG)return;
+  if(PG.cd>0){PG.cd-=dt;const s=Math.ceil(PG.cd);if(s!==PG.cs){PG.cs=s;if(s>0){pgShow(`${PGAMES[PG.k].ic} Get ready… ${s}`);beep(660,.1,'triangle',.06);}else{pgShow('Go!');beep(990,.25,'triangle',.07);if(PG.k==='hide')sleepOff();}}return;}
+  PG.t-=dt;if(!inPark(P.x,P.z,10)||driving)return pgEnd('left');
+  if(PG.k==='agility'){const h=HOOPS[PG.n];if(h&&Math.hypot(P.x-h.x,P.z-h.z)<1.8){h.m.color.set(0x2fbf8f);h.m.emissive.set(0x0a4a30);h.n.visible=false;PG.n++;PG.coins+=2;coinSnd();
+      if(PG.n>=HOOPS.length)return pgEnd('win');hoopNext();}}
+  if(PG.k==='balloon'){PG.sp-=dt;if(PG.sp<=0&&balloons.length<9){addBalloon();PG.sp=.5+Math.random()*.5;}
+    for(let i=balloons.length-1;i>=0;i--){const b=balloons[i];b.t+=dt;b.y=1.2+Math.sin(clock*2+b.ph)*.15+Math.max(0,b.t-6)*1.6;b.g.position.set(b.x,b.y,b.z);b.g.rotation.z=Math.sin(clock*1.5+b.ph)*.12;
+      if(b.y>7){popBalloon(i,false);continue;}
+      if(b.y<3.2){if(Math.hypot(P.x-b.x,P.z-b.z)<1.5){popBalloon(i,true);continue;}const d=dogsW.find(d=>!d.fetching&&Math.hypot(d.g.position.x-b.x,d.g.position.z-b.z)<1.2);if(d){popBalloon(i,true,d);continue;}}}}
+  if(PG.k==='hide')for(const d of dogsW)if(d.hide&&Math.hypot(P.x-d.g.position.x,P.z-d.g.position.z)<2.8){d.hide=null;d.jump=1;PG.found++;PG.coins+=8;bark();hearts(d.g.position.clone().setY(2));floatText('Found!',d.g.position);
+    toast(`You found ${d.name}!`);if(PG.found>=PG.hid)return pgEnd('win');}
+  if(PG.t<=0)return pgEnd('time');
+  pgUiT-=dt;if(pgUiT<=0){pgUiT=.1;const t=Math.ceil(PG.t);pgShow(PG.k==='agility'?`🏁 Hoop ${PG.n+1} of 8 · ⏱ ${t}`:PG.k==='hide'?`🙈 Found ${PG.found} of ${PG.hid} · ⏱ ${t}`:`🎈 ${PG.n} popped · ⏱ ${t}`);}}
+const BGEO=new THREE.SphereGeometry(.45,14,10),SGEO=new THREE.CylinderGeometry(.012,.012,1.1,4);
+function addBalloon(){for(let k=0;k<20;k++){const x=PARK.x0+2+Math.random()*(PARK.x1-PARK.x0-4),z=PARK.z0+2+Math.random()*(PARK.z1-PARK.z0-4);if(blocked(x,z,1))continue;
+  const gold=Math.random()<.12,g=new THREE.Group(),c=[0xff5d8f,0x4fb3ff,0xffc53d,0x2fbf8f,0xb48cff,0xff8a2a][Math.floor(Math.random()*6)];
+  const b=new THREE.Mesh(BGEO,gold?mat(0xe8c25a,{metal:.6,rough:.25,em:0x886600,emI:.4}):mat(c,{rough:.3}));b.scale.set(1,1.18,1);b.castShadow=true;g.add(b);
+  const s=new THREE.Mesh(SGEO,mat(0xffffff));s.position.y=-1.05;g.add(s);scene.add(g);balloons.push({g,x,z,y:1.2,t:0,gold,ph:Math.random()*6});return;}}
+function popBalloon(i,hit,d){const b=balloons[i];balloons.splice(i,1);scene.remove(b.g);if(!hit)return;const c=b.gold?5:1;PG.n++;PG.coins+=c;
+  beep(b.gold?1800:1500,.05,'square',.06,.4);burst(b.g.position.clone(),b.gold?30:12);floatText('+'+c,b.g.position);if(d&&Math.random()<.5)toast(`${d.name} popped one!`);}
+function pgClear(){balloons.splice(0).forEach(b=>scene.remove(b.g));HOOPS.forEach(h=>{h.m.color.set(0xffffff);h.m.emissive.set(0);h.n.visible=false;});dogsW.forEach(d=>{d.hide=null;});
+  sleepOff();document.body.classList.remove('pg');$('pgBar').hidden=true;}
+function pgEnd(why){const g=PG;if(!g)return;PG=null;pgClear();if(why==='quiet')return;const G=PGAMES[g.k];let c=g.coins,line='',rec=false;
+  if(g.k==='agility'&&why==='win'){const tm=G.time-g.t;c+=10;rec=!S.st.agBest||tm<S.st.agBest;if(rec)S.st.agBest=+tm.toFixed(1);line=`You ran all 8 hoops in ${tm.toFixed(1)} seconds!${rec?' A new record!':''} +10 finish bonus.`;}
+  else if(g.k==='agility')line=`You made it through ${g.n} of 8 hoops. Try again!`;
+  if(g.k==='hide'){if(why==='win'){c+=10;S.st.hideAll++;line=`You found all ${g.hid} in ${Math.round(G.time-g.t)} seconds! +10 bonus.`;}else line=`You found ${g.found} of ${g.hid}. The rest come running back!`;}
+  if(g.k==='balloon'){rec=g.n>S.st.popBest;if(rec)S.st.popBest=g.n;line=`You popped ${g.n} balloon${g.n===1?'':'s'}!${rec&&g.n?' A new record!':''}`;}
+  if(why==='left')line='You left the park, so the game stopped. '+line;if(why==='stop')line='You stopped the game. '+line;
+  if(c)earn(c);S.st.pk|=G.bit;save();if(why==='win'||rec){jingle();burst(player.position.clone().setY(2),60);}
+  openSheet(`<div class="tag">Paw Park · ${G.name}</div><h2>${why==='win'?'You did it!':why==='time'?'Time\'s up!':'Game over'}</h2><p>${line}</p><p><b>+${c} paw coins</b></p>
+    <div class="row"><button class="btn" data-act="pgStart" data-arg="${g.k}">Play again</button><button class="btn alt" data-act="close">Done</button></div>`);refreshHUD();}
+const PG_ACTS={pgStart:k=>pgStart(k)};
+
 /* ---------- sticker book ---------- */
 const ownAll=list=>list.every(has),helped=()=>Object.keys(Q).filter(k=>S.q[k].s==='done'||S.q[k].rep).length;
 const cnt=(k,n)=>()=>[S.st[k],n];
@@ -1497,7 +1826,19 @@ const STICKERS=[
   {id:'night',ic:'🌙',name:'Stargazer',hint:'Stay out until the stars come out',c:10,ok:()=>S.st.night>0},
   {id:'show',ic:'🏆',name:'Best in Show',hint:'Win the Grand Plush Show',c:30,ok:()=>S.q.show.s==='done'},
   {id:'home',ic:'🏡',name:'Home sweet home',hint:'Buy the Dream Home',c:20,ok:()=>S.home.own},
-  {id:'decor',ic:'🛋️',name:'Decorator',hint:'Put 8 things in your house',c:30,ok:()=>Object.keys(S.home.f).length>=8,pr:()=>[Object.keys(S.home.f).length,8]}
+  {id:'decor',ic:'🛋️',name:'Decorator',hint:'Put 8 things in your house',c:30,ok:()=>Object.keys(S.home.f).length>=8,pr:()=>[Object.keys(S.home.f).length,8]},
+  {id:'rename',ic:'✏️',name:'New name',hint:'Give an ESSA a new name in Care',c:10,ok:()=>S.st.rename>0},
+  {id:'bed',ic:'🛏️',name:'Sweet dreams',hint:'Tuck your ESSAs into their pup beds at night',c:15,ok:()=>S.st.bed>0},
+  {id:'brush10',ic:'🪮',name:'Brush buddy',hint:'Brush your ESSAs 10 times',c:15,ok:()=>S.st.brush>=10,pr:cnt('brush',10)},
+  {id:'bath5',ic:'🛁',name:'Squeaky clean',hint:'Give your ESSAs 5 baths',c:15,ok:()=>S.st.bath>=5,pr:cnt('bath',5)},
+  {id:'happy',ic:'💖',name:'Full of love',hint:'Fill all 5 hearts for an ESSA',c:20,ok:()=>S.dogs.some(d=>d.joy>=100)},
+  {id:'photo1',ic:'📷',name:'Say cheese!',hint:'Take a picture in photo mode',c:10,ok:()=>S.st.photo>0},
+  {id:'photo10',ic:'🖼️',name:'Photo album',hint:'Take 10 pictures',c:20,ok:()=>S.st.photo>=10,pr:cnt('photo',10)},
+  {id:'hunt',ic:'🍂',name:'Season hunter',hint:'Find all 8 hidden things in a season hunt',c:25,ok:()=>S.st.hunt>0},
+  {id:'park',ic:'🏞️',name:'Park day',hint:'Play all 3 games at Paw Park',c:20,ok:()=>S.st.pk===7,pr:()=>[[1,2,4].filter(b=>S.st.pk&b).length,3]},
+  {id:'agility',ic:'🏁',name:'Agility ace',hint:'Finish the agility course in time',c:20,ok:()=>S.st.agBest>0},
+  {id:'pop20',ic:'🎈',name:'Pop star',hint:'Pop 20 balloons in one game',c:25,ok:()=>S.st.popBest>=20,pr:()=>[S.st.popBest,20]},
+  {id:'seek',ic:'🙈',name:'Found you!',hint:'Find every ESSA in hide and seek',c:20,ok:()=>S.st.hideAll>0}
 ];
 const stkQ=[];let stkBusy=false;
 // award new stickers; quiet (on loading an old save) sums up a big batch in one message instead of a long line of pop-ups
@@ -1540,9 +1881,10 @@ function refreshHUD(){checkStickers();$('coinN').textContent=S.coins;let t;
   else t=S.home.own?(S.stk.length<STICKERS.length?`Best in Show! Fill your sticker book (${S.stk.length} of ${STICKERS.length}) and decorate your Dream Home.`:'You got every sticker! You are a Puppy Quest superstar.'):`Best in Show! Save ${HOME.price} paw coins for the Dream Home on Meadow Ln (the heart on your map).`;
   $('goalT').textContent=t;
   const act=Object.keys(Q).filter(k=>S.q[k].s==='active').map(k=>`${Q[k].who}: ${qCount(k)}/${Q[k].need} ${Q[k].item}`);
+  if(seaN()<8){const z=SEASONS[season()];act.push(`${z.ic} ${z.one} hunt: ${seaN()}/8`);}
   $('goalQ').textContent=act.join(' · ');
   for(const id in Q){const st=S.q[id];npcs[id].mk.visible=st.s==='new'?(!Q[id].needDog||S.dogs.length>0):st.s==='active'&&qCount(id)>=Q[id].need;}
-  npcs.judge.mk.visible=S.q.show.s!=='done'&&hasTier(3);npcs.trick.mk.visible=!S.st.shows&&S.dogs.length>0;}
+  npcs.judge.mk.visible=S.q.show.s!=='done'&&hasTier(3);npcs.trick.mk.visible=!S.st.shows&&S.dogs.length>0;npcs.park.mk.visible=!S.st.pk;}
 /* 3D preview for shops and the toy box */
 let PV=null;
 function pv(){if(PV)return PV;const c=document.createElement('canvas');
@@ -1564,7 +1906,7 @@ function thumb(type){const P=pv();if(P.thumbs[type])return P.thumbs[type];pvSet(
   const u=P.c.toDataURL('image/png');P.thumbs[type]=u;return u;}
 function mountPv(type){pvSet(type);mountBox();}
 let gearCat='neck',gearI=0,dressI=0,lookFirst=false;
-const shopGear=c=>Object.keys(GEAR).filter(k=>GEAR[k].slot===c&&GEAR[k].price);
+const shopGear=c=>Object.keys(GEAR).filter(k=>GEAR[k].slot===c&&GEAR[k].price&&(!GEAR[k].sea||GEAR[k].sea===season()));
 const pvDogType=()=>{const d=S.dogs.find(x=>x.out!==false)||S.dogs[0];return d?d.type:'cartoon';};
 function openGear(cat,i){if(cat&&cat!==gearCat){gearCat=cat;gearI=0;}if(i!=null)gearI=i;const list=shopGear(gearCat),n=list.length;gearI=(gearI+n)%n;
   const id=list[gearI],G=GEAR[id],own=owns(id),can=S.coins>=G.price,type=pvDogType();
@@ -1587,7 +1929,7 @@ function openLook(first){if(first!=null)lookFirst=first;const L=S.look;
   const ch=(k,list)=>list.map(([v,l])=>`<button class="chip2 ${L[k]===v?'on':''}" data-act="setLook" data-arg="${k}:${v}">${l}</button>`).join('');
   const row=(t,h)=>`<div class="wr"><div class="tag">${t}</div><div class="chips">${h}</div></div>`;
   openSheet(`<div class="pvbox"></div><div class="tag">${lookFirst?'New game':'My look'}</div><h2>${lookFirst?'Make your character':'Change your look'}</h2>
-    ${row('Skin',sw('skin'))}${row('Hair color',sw('hair'))}${row('Hair style',ch('style',STYLES))}${row('Hat',ch('hat',HATS))}${row('Shirt',sw('shirt'))}${row('Pants',sw('pants'))}${row('Shoes',sw('shoes'))}
+    ${row('I am a',ch('kid',KIDS))}${row('Skin',sw('skin'))}${row('Hair color',sw('hair'))}${row('Hair style',ch('style',STYLES))}${row('Hat',ch('hat',HATS))}${row('Shirt',sw('shirt'))}${row('Pants',sw('pants'))}${row('Shoes',sw('shoes'))}
     <div class="row"><button class="btn" data-act="lookDone">${lookFirst?"Let's go!":'Done'}</button></div>`,'dress');
   pvShow('p:'+JSON.stringify(L),()=>({g:person(lookOpts(L))}),1.3);mountBox();}
 const keepScroll=f=>{const st=sheet.scrollTop;f();sheet.scrollTop=st;};
@@ -1602,8 +1944,8 @@ function openStore(id,i){if(id==='gear')return openGear();if(id!==shopId){shopId
   openSheet(h,'shop');mountPv(type);}
 function openBox(){if(!S.dogs.length)return openSheet(`<div class="tag">Toy box</div><h2>Your toy box is empty</h2><p>Buy your first ESSA at ValuMart and it will live here.</p><div class="row"><button class="btn" data-act="close">OK</button></div>`);
   const out=S.dogs.filter(d=>d.out!==false).length;
-  openSheet(`<div class="tag">Toy box · ${S.dogs.length} ESSA${S.dogs.length>1?'s':''}</div><h2>Who comes along?</h2><p class="keys">Up to 4 ESSAs can follow you. The rest wait safely in the toy box.</p>
-    <div class="box">${S.dogs.map((d,i)=>{const o=d.out!==false;return`<div class="toy ${o?'out':''}"><img src="${thumb(d.type)}" alt="${esc(d.name)}, ${DOGS[d.type].label}"><b>${esc(d.name)}</b><small>${DOGS[d.type].label}</small>
+  openSheet(`<div class="tag">Toy box · ${S.dogs.length} ESSA${S.dogs.length>1?'s':''}</div><h2>Who comes along?</h2><p class="keys">Up to 4 ESSAs can follow you. The rest wait safely in the toy box. Tap Care to brush, bathe or rename an ESSA.</p>
+    <div class="box">${S.dogs.map((d,i)=>{const o=d.out!==false;return`<div class="toy ${o?'out':''}"><img src="${thumb(d.type)}" alt="${esc(d.name)}, ${DOGS[d.type].label}"><b>${esc(d.name)}</b><small>${DOGS[d.type].label}</small><button class="hbtn" data-act="careOpen" data-arg="${i}" aria-label="Care for ${esc(d.name)}"><span>${heartsTxt(d.joy)}</span> Care</button>
       <div class="row"><button class="btn ${o?'alt':''}" data-act="toggleOut" data-arg="${i}" ${!o&&out>=4?'disabled':''}>${o?'Put away':'Bring along'}</button><button class="btn" data-act="dress" data-arg="${i}">Dress up</button></div></div>`}).join('')}</div>
     <div class="row"><button class="btn" data-act="close">Done</button></div>`);}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1615,6 +1957,10 @@ function intro(){openSheet(`<div class="tag">How to play</div><h2>Puppy Quest</h
   <p class="keys">Fetch &amp; Fancy sells accessories. Tap Dress up in the toy box to change what each ESSA wears, and use My look in the pause menu to change your character.</p>
   <p class="keys">Every store has its own ESSAs. Use the arrows to look at each one before you buy. Your ESSAs live in the toy box, where you pick who comes along.</p>
   <p class="keys">Save up for the Dream Home on Meadow Ln (the heart on the map). Inside, buy furniture from the catalog by the door, tap Move to carry furniture to a new spot, and pick your wallpaper and floor.</p>
+  <p class="keys">Tap Care in the toy box to brush, bathe, give treats and rename your ESSAs. Happy ESSAs have full hearts. At night, walk to the pup beds in your house and tap Bedtime.</p>
+  <p class="keys">Tap Photo (top left) for photo mode. Pick a pose, turn the camera, and tap the big round button to take a picture you can save.</p>
+  <p class="keys">The town changes with the seasons. Each season, find 8 hidden things (like pumpkins or presents) for a special hat, and look for the seasonal item at Fetch &amp; Fancy.</p>
+  <p class="keys">Visit Ranger Rae at Paw Park on Meadow Ln for the agility course, hide and seek, and balloon pop.</p>
   <p class="keys">Your game saves by itself every few seconds. You can also save from the pause menu (top right).</p>
   <div class="row"><button class="btn" data-act="${mode==='play'?'pause':'close'}">Got it</button></div>`);}
 function ago(t){if(!t)return'';const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} days ago`;}
@@ -1629,15 +1975,17 @@ function slotList(purpose){let h=`<h2>${purpose==='new'?'Pick a save slot':'Load
 function refreshTitle(){const last=store.get(LASTKEY),x=last&&summary(last),any=[1,2,3].some(i=>readSlot(i));
   $('tCont').hidden=!x;$('tLoad').hidden=!any;$('tInfo').innerHTML=x?`Slot ${last}: ${x.line}`:'';
   document.body.classList.toggle('lefty',!!SET.lefty);}
-function startGame(i,state){if(driving)exitCar(true);if(inHome)exitHome(true);slot=i;S=migrate(state);refreshHome();buildPlayer(S.look);camYaw=0;camPitch=.75;
+function startGame(i,state){exitPhoto();pgEnd('quiet');if(driving)exitCar(true);if(inHome)exitHome(true);slot=i;S=migrate(state);refreshHome();buildPlayer(S.look);camYaw=0;camPitch=.75;
   for(const it of items.slice())if(it.kind!=='coin'){removeItem(it);items.splice(items.indexOf(it),1);}
   for(const id of Object.keys(Q))if(S.q[id].s==='active')spawnQuestItems(id);
+  applySeason();spawnSeaHunt();
   const [px,pz]=S.pos||[0,-12];player.position.set(px,0,pz);player.rotation.y=0;
   respawnDogs();ballReset();digs.forEach(placeDig);
   camera.position.set(px,20,pz+20);look.set(px,1,pz);mode='play';document.body.classList.remove('in-title');$('title').hidden=true;closeSheet();checkStickers(true);save();refreshHUD();
   toast(S.dogs.length?`Welcome back! ${S.dogs[0].name} missed you.`:'Find gold paw coins to buy your first ESSA!');
+  if(seaN()<8)setTimeout(()=>{if(mode==='play'&&wrap.hidden){const z=SEASONS[season()];toast(`${z.ic} It's ${z.name.toLowerCase()}! Find 8 ${z.items} hidden around town for a special prize.`);}},9000);
   if(!S.home.own&&S.dogs.length)setTimeout(()=>{if(mode==='play'&&!S.home.own&&wrap.hidden)toast('Psst! A Dream Home is for sale on Meadow Ln. Look for the heart on your map.');},5000);}
-function goTitle(){save();mode='title';closeSheet();document.body.classList.add('in-title');$('title').hidden=false;refreshTitle();}
+function goTitle(){exitPhoto();pgEnd('quiet');save();mode='title';closeSheet();document.body.classList.add('in-title');$('title').hidden=false;refreshTitle();}
 const onOff=v=>v?'On':'Off';
 const ACTS={
   close:closeSheet,
@@ -1650,7 +1998,7 @@ const ACTS={
   wear:arg=>{const [k,id]=arg.split(':');const info=S.dogs[dressI];if(!info)return;if(k==='leash')S.leash=id||null;else{if(id)info.gear[k]=id;else delete info.gear[k];}
     dressAll();if(inHome)homeDogsBuild();save();keepScroll(()=>openDress());},
   look:()=>openLook(false),
-  setLook:arg=>{const [k,v]=arg.split(':');S.look[k]=k in PAL?+v:v;buildPlayer(S.look);save();keepScroll(()=>openLook());},
+  setLook:arg=>{const [k,v]=arg.split(':');if(k==='kid'&&S.look.kid!==v){S.look.style=KID_STYLE[v];if(v==='boy'&&(S.look.hat==='bow'||S.look.hat==='tiara'))S.look.hat='cap';}S.look[k]=k in PAL?+v:v;buildPlayer(S.look);save();keepScroll(()=>openLook());},
   lookDone:()=>{closeSheet();if(lookFirst){lookFirst=false;toast('Find gold paw coins to buy your first ESSA!');}},
   toggleOut:i=>{const d=S.dogs[+i];if(!d)return;const out=S.dogs.filter(x=>x.out!==false).length;if(d.out===false&&out>=4)return;d.out=d.out===false;respawnDogs();if(inHome)homeDogsBuild();save();openBox();},
   adopt:type=>{const dg=DOGS[type];openSheet(`<div class="tag">${dg.label}</div><h2>Name your ESSA</h2><div class="pvbox"></div>
@@ -1659,7 +2007,7 @@ const ACTS={
     mountPv(type);const i=$('dogName');i.select();i.addEventListener('keydown',e=>{if(e.key==='Enter')ACTS.home(type)});},
   home:type=>{const dg=DOGS[type];if(S.coins<dg.price||has(type))return closeSheet();const name=($('dogName').value.trim()||dg.def).slice(0,12);
     S.coins-=dg.price;const outs=S.dogs.filter(x=>x.out!==false);let msg='';if(outs.length>=4){outs[0].out=false;msg=` ${outs[0].name} went to the toy box.`;}
-    S.dogs.push({type,name,out:true});respawnDogs();save();const d=dogsW[dogsW.length-1];
+    S.dogs.push({type,name,out:true,joy:80,care:{}});respawnDogs();save();const d=dogsW[dogsW.length-1];
     closeSheet();jingle();setTimeout(bark,500);burst(d.g.position.clone().setY(1.5));hearts(d.g.position.clone().setY(2));toast(`${name} joined your family!${msg}`);refreshHUD();
     if(S.dogs.length===1)setTimeout(()=>{if(mode==='play')toast(`Tap the pink ball to play fetch with ${name}! ESSAs can also sniff out buried treasure.`);},3200);},
   qstart:id=>{S.q[id].s='active';spawnQuestItems(id);save();closeSheet();toast(`Quest started: ${Q[id].who}`);refreshHUD();},
@@ -1671,11 +2019,12 @@ const ACTS={
     jingle();setTimeout(jingle,500);burst(player.position.clone().setY(2),120);if(d){hearts(d.g.position.clone().setY(2));d.jump=1;}
     openSheet(`<div class="tag">The Grand Plush Show</div><h2>Best in Show!</h2><p>${esc(d?d.name:'Your pup')} won first prize and a golden crown! You also won 100 paw coins.</p><p>Keep playing to fill your sticker book, dig up secret treasures and decorate your Dream Home!</p><div class="row"><button class="btn" data-act="close">Woohoo!</button></div>`);refreshHUD();},
   pause:()=>openSheet(`<div class="tag">Slot ${slot}</div><h2>Paused</h2>
-    <div class="tmenu" style="max-width:none"><button class="btn" data-act="close">Resume</button><button class="btn alt" data-act="saveNow">Save game</button><button class="btn alt" data-act="stickers">Sticker book · ${S.stk.length} of ${STICKERS.length}</button>${S.home.own&&!inHome?'<button class="btn alt" data-act="goHome">Go to my house</button>':''}
+    <div class="tmenu" style="max-width:none"><button class="btn" data-act="close">Resume</button><button class="btn alt" data-act="saveNow">Save game</button><button class="btn alt" data-act="stickers">Sticker book · ${S.stk.length} of ${STICKERS.length}</button>${S.home.own&&!inHome?'<button class="btn alt" data-act="goHome">Go to my house</button>':''}${inHome&&S.dogs.length?'<button class="btn alt" data-act="bedtime">Bedtime for my ESSAs</button>':''}
     <div class="row"><button class="btn alt" data-act="box">Toy box</button><button class="btn alt" data-act="look">My look</button><button class="btn alt" data-act="settings">Settings</button><button class="btn alt" data-act="help">How to play</button></div>
     <button class="btn warn" data-act="quit">Save and quit to title</button></div>`),
   saveNow:()=>{const ok=save();closeSheet();toast(ok?`Game saved in slot ${slot}`:'Could not save. This browser is blocking saved games.');if(ok)tone(784,.12,'triangle',.08);},
   quit:goTitle,
+  bedtime:()=>bedtime(),
   stickers:openStickers,
   wearTreasure:id=>{const G=GEAR[id];if(!G||!owns(id))return closeSheet();if(G.slot==='leash')S.leash=id;
     else{const info=S.dogs[treasureDog]||S.dogs.find(x=>x.out!==false)||S.dogs[0];if(info){info.gear=info.gear||{};info.gear[G.slot]=id;}}
@@ -1685,10 +2034,12 @@ const ACTS={
     <div class="set">Music<button class="btn ${SET.music?'':'alt'}" data-act="tog" data-arg="music" aria-pressed="${SET.music}">${onOff(SET.music)}</button></div>
     <div class="set">Song<button class="btn alt" data-act="song">${(TRACKS[SET.track]||TRACKS[0]).name} ›</button></div>
     ${fsOK?`<div class="set">Full screen<button class="btn ${isFs()?'':'alt'}" data-act="fs">${onOff(isFs())}</button></div>`:`<p class="keys">Full screen is blocked in this window. For full screen, open the game link in your phone's web browser (like Chrome) and tap the full screen button.</p>`}
+    <div class="set">Season<button class="btn alt" data-act="seaCycle">${seaLabel()} ›</button></div>
     <div class="set">Day and night<button class="btn ${SET.daynight?'':'alt'}" data-act="tog" data-arg="daynight">${onOff(SET.daynight)}</button></div>
     <div class="set">Camera follows behind you<button class="btn ${SET.autocam?'':'alt'}" data-act="tog" data-arg="autocam">${onOff(SET.autocam)}</button></div>
     <div class="set">Walk joystick side<button class="btn alt" data-act="tog" data-arg="lefty">${SET.lefty?'Right':'Left'}</button></div>
     <div class="row"><button class="btn alt" data-act="${mode==='play'?'pause':'close'}">Back</button></div>`),
+  seaCycle:()=>{const i=SEA_ORDER.indexOf(SET.season||'auto');SET.season=SEA_ORDER[(i+1)%SEA_ORDER.length];saveSet();applySeason();if(mode==='play'){spawnSeaHunt();refreshHUD();}ACTS.settings();},
   song:()=>{SET.track=((SET.track||0)+1)%TRACKS.length;SET.music=true;saveSet();mStep=0;ACTS.settings();},
   fs:()=>{toggleFs();setTimeout(()=>{if(!wrap.hidden&&sheet.querySelector('[data-act=fs]'))ACTS.settings();},400);},
   tog:k=>{SET[k]=!SET[k];saveSet();document.body.classList.toggle('lefty',!!SET.lefty);ACTS.settings();},
@@ -1704,11 +2055,16 @@ const ACTS={
     <div class="row"><button class="btn warn" data-act="delYes" data-arg="${i}">Yes, delete</button><button class="btn alt" data-act="loadGame">Back</button></div>`);},
   delYes:i=>{store.del(slotKey(i));if(store.get(LASTKEY)==i)store.del(LASTKEY);refreshTitle();[1,2,3].some(k=>readSlot(k))?ACTS.loadGame():closeSheet();}
 };
-Object.assign(ACTS,HOME_ACTS,TS_ACTS);
+Object.assign(ACTS,HOME_ACTS,TS_ACTS,CARE_ACTS,PHOTO_ACTS,PG_ACTS);
 sheet.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled){audio();ACTS[b.dataset.act](b.dataset.arg);}});
 $('menuBtn').addEventListener('click',()=>{audio();ACTS.pause();});
+$('camBtn').addEventListener('click',enterPhoto);
+$('photoUi').addEventListener('click',e=>{const b=e.target.closest('[data-ph]');if(!b||!photo)return;audio();const k=b.dataset.ph;
+  if(k==='snap')snapPhoto();else if(k==='done')exitPhoto();else if(k==='pose'){photo.pose=(photo.pose+1)%POSES.length;poseLbl();dogsW.forEach(d=>d.jump=1);beep(880,.06,'triangle',.05);}
+  else if(k==='left'||k==='right')camYaw+=(k==='left'?-1:1)*Math.PI/6;else camZoom=Math.max(.25,Math.min(1.1,camZoom+(k==='in'?-.08:.08)));});
+$('pgBar').addEventListener('click',e=>{if(e.target.closest('[data-pg]'))pgEnd('stop');});
 $('title').addEventListener('click',e=>{audio();const b=e.target.closest('[data-act]');if(b)ACTS[b.dataset.act](b.dataset.arg);});
-setInterval(()=>{if(mode==='play'&&wrap.hidden){checkStickers();save();}},10000);
+setInterval(()=>{if(mode==='play'&&wrap.hidden&&!$('sleep').classList.contains('on')){joyTick();checkStickers();save();}},10000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});addEventListener('pagehide',()=>save());
 wrap.addEventListener('pointerdown',audio);
 
@@ -1717,7 +2073,8 @@ const keys={};let jx=0,jy=0,joyId=null;const joy=$('joy'),knob=$('knob');
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;keys[e.code]=true;
   if((e.code==='Space'||e.code==='Enter')&&!paused&&!actBtn.hidden){e.preventDefault();doAction();}
   if(e.code==='KeyT')throwBall();
-  if(e.code==='Escape'){if(!wrap.hidden)closeSheet();else if(mode==='play')ACTS.pause();}});
+  if(e.code==='Escape'){if(!wrap.hidden)closeSheet();else if(photo)exitPhoto();else if(mode==='play')ACTS.pause();}
+  if(e.code==='KeyP'&&mode==='play'&&wrap.hidden)photo?snapPhoto():enterPhoto();});
 addEventListener('keyup',e=>keys[e.code]=false);
 function joyMove(e){const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,max=r.width/2-12;
   let dx=e.clientX-cx,dy=e.clientY-cy;const l=Math.hypot(dx,dy);if(l>max){dx*=max/l;dy*=max/l;}
@@ -1755,16 +2112,17 @@ let clock=0,last=performance.now(),cullT=0;
 const arrow=(()=>{const sh=new THREE.Shape();sh.moveTo(0,.9);sh.lineTo(.55,0);sh.lineTo(.2,0);sh.lineTo(.2,-.6);sh.lineTo(-.2,-.6);sh.lineTo(-.2,0);sh.lineTo(-.55,0);sh.lineTo(0,.9);
   const m=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshBasicMaterial({color:0xffc53d,transparent:true,opacity:.9,depthWrite:false}));m.rotation.order='YXZ';m.rotation.x=-Math.PI/2;scene.add(m);return m;})();
 function goalTarget(){
+  if(PG&&PG.k==='agility'&&PG.cd<=0&&HOOPS[PG.n])return HOOPS[PG.n];
   for(const t of[1,2,3])if(!hasTier(t))return S.coins>=minPrice(t)?spots[t-1]:null;
   for(const id in Q)if(S.q[id].s==='active'&&qCount(id)>=Q[id].need)return npcs[id];
   if(S.q.show.s!=='done'&&showReqs().every(x=>x[0]))return npcs.judge;return null;}const camPos=new THREE.Vector3(),look=new THREE.Vector3();
-function petDog(d){bark();hearts(d.g.position.clone().setY(2));d.jump=1;toast(`${d.name} gives the best hugs!`);S.st.hug++;refreshHUD();}
+function petDog(d){addJoy(S.dogs[d.idx],4);bark();hearts(d.g.position.clone().setY(2));d.jump=1;toast(`${d.name} gives the best hugs!`);S.st.hug++;refreshHUD();}
 function update(dt){clock+=dt;
   let mx=0,mz=0;
-  if(!paused){mx=jx+((keys.KeyD||keys.ArrowRight)?1:0)-((keys.KeyA||keys.ArrowLeft)?1:0);mz=jy+((keys.KeyS||keys.ArrowDown)?1:0)-((keys.KeyW||keys.ArrowUp)?1:0);}
+  if(!paused&&!photo){mx=jx+((keys.KeyD||keys.ArrowRight)?1:0)-((keys.KeyA||keys.ArrowLeft)?1:0);mz=jy+((keys.KeyS||keys.ArrowDown)?1:0)-((keys.KeyW||keys.ArrowUp)?1:0);}
   if(mode==='play'){camYaw-=(lkx*2.2+((keys.KeyE?1:0)-(keys.KeyQ?1:0))*1.8)*dt;camPitch=Math.max(.3,Math.min(1.3,camPitch+(lky+((keys.KeyR?1:0)-(keys.KeyF?1:0)))*1.2*dt));}
   if(mode==='play'){if(lookId!==null||dragId!==null||keys.KeyQ||keys.KeyE||keys.KeyR||keys.KeyF)lastCam=clock;
-    else if((SET.autocam||driving)&&clock-lastCam>.6){const mv=driving?Math.min(1,Math.abs(driving.v)/5):Math.min(1,Math.hypot(mx,mz));if(mv>.1){const dy=Math.atan2(Math.sin(player.rotation.y+Math.PI-camYaw),Math.cos(player.rotation.y+Math.PI-camYaw));
+    else if((SET.autocam||driving)&&!photo&&clock-lastCam>.6){const mv=driving?Math.min(1,Math.abs(driving.v)/5):Math.min(1,Math.hypot(mx,mz));if(mv>.1){const dy=Math.atan2(Math.sin(player.rotation.y+Math.PI-camYaw),Math.cos(player.rotation.y+Math.PI-camYaw));
       const k=Math.min(1,dt*(driving?2:1.6)*mv);camYaw+=dy*k;camPitch+=(.62-camPitch)*k;}}}
   {const c=Math.cos(camYaw),s=Math.sin(camYaw),rx=mx*c+mz*s,rz=-mx*s+mz*c;mx=rx;mz=rz;}
   const ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml;}const spd=Math.min(1,ml)*8;
@@ -1773,29 +2131,32 @@ function update(dt){clock+=dt;
   if(ml>.05){P.x+=mx*8*dt;P.z+=mz*8*dt;collide(P,.45);const a=Math.atan2(mx,mz);let da=a-player.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));player.rotation.y+=da*Math.min(1,dt*12);}
   player.userData.ph=(player.userData.ph||0)+spd*dt*1.6;const sw=Math.sin(player.userData.ph)*Math.min(1,spd/4)*.7;
   player.userData.legs[0].rotation.x=sw;player.userData.legs[1].rotation.x=-sw;player.userData.arms[0].rotation.x=-sw;player.userData.arms[1].rotation.x=GEAR[S.leash]&&dogsW.length?-.5:sw;
-  player.position.y=Math.abs(Math.sin(player.userData.ph))*.06*Math.min(1,spd/4);}
+  player.position.y=Math.abs(Math.sin(player.userData.ph))*.06*Math.min(1,spd/4);
+  if(photo){let da=camYaw-player.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));player.rotation.y+=da*Math.min(1,dt*8);photoPose();}}
   if(player.userData.throwT>0){player.userData.throwT-=dt;player.userData.arms[1].rotation.x=-.6-2.2*Math.sin(Math.max(0,player.userData.throwT)/.35*Math.PI);}
   // dogs follow in a line; a dog fetching the ball or sniffing treasure leaves the line for a bit
-  ballUpdate(dt);if(mode==='play')digUpdate(dt,P);
+  ballUpdate(dt);if(mode==='play'){digUpdate(dt,P);pgUpdate(dt,P);}
   let lx=P.x,lz=P.z;
-  if(!driving)dogsW.forEach((d,i)=>{const p=d.g.position;let v=0;const busy=d.fetching||d.sniff;
-    if(d.fetching)v=fetchMove(d,dt);else if(d.sniff)v=sniffMove(d,dt);
+  if(!driving)dogsW.forEach((d,i)=>{const p=d.g.position;let v=0;const busy=d.fetching||d.sniff||d.hide||photo;
+    if(d.fetching)v=fetchMove(d,dt);else if(d.sniff)v=sniffMove(d,dt);else if(d.hide){if(PG&&PG.cd<=0)d.g.rotation.y+=Math.sin(clock*.8+i)*dt*.3;}
+    else if(photo){const s=photoSlot(i,P,player.rotation.y),dx=s.x-p.x,dz=s.z-p.z,dist=Math.hypot(dx,dz);if(dist>.15){v=Math.min(9,dist*5);p.x+=dx/dist*Math.min(dist,v*dt);p.z+=dz/dist*Math.min(dist,v*dt);turnTo(d.g,dx,dz,dt*8);}
+      else{turnTo(d.g,camera.position.x-p.x,camera.position.z-p.z,dt*6);if(POSES[photo.pose][0]==='dance')d.g.rotation.y+=Math.sin(clock*4+i)*dt*2;}}
     else{const dx=lx-p.x,dz=lz-p.z,dist=Math.hypot(dx,dz),want=i?1.9:2.1;
     if(dist>want){v=Math.min(14,(dist-want)*4.5);p.x+=dx/dist*v*dt;p.z+=dz/dist*v*dt;collide(p,.4);}
     if(dist>20){p.x=lx-dx/dist*3;p.z=lz-dz/dist*3;}
     if(dist>.3&&(v>.2||dist>want+.3))turnTo(d.g,dx,dz,dt*8);}
     d.spd+=(v-d.spd)*Math.min(1,dt*8);d.phase+=d.spd*dt*2.6;const k=Math.min(1,d.spd/3)*.75;
     const off=[0,Math.PI,Math.PI,0];d.legs.forEach((l,j)=>l.rotation.x=Math.sin(d.phase+off[j])*k);
-    d.wagT+=dt*(d.spd<.5?16:9);d.tail.rotation.y=Math.sin(d.wagT)*.6;
+    d.wagT+=dt*(d.spd<.5?16:9)*((S.dogs[d.idx]&&S.dogs[d.idx].joy>=80)?1.5:1);if(!busy&&d.spd<.3&&S.dogs[d.idx]&&S.dogs[d.idx].joy>=95&&Math.random()<dt*.08)hearts(p.clone().setY(2));d.tail.rotation.y=Math.sin(d.wagT)*.6;
     d.jump=Math.max(0,d.jump-dt*1.8);d.body.position.y=Math.abs(Math.sin(d.phase))*.05*k+Math.sin(d.jump*Math.PI)*.8;
     d.head.rotation.x=d.sniff&&d.spd<1?.42+Math.sin(clock*13)*.1:Math.sin(clock*1.3+i)*.06;
     if(d.acc&&d.acc.userData.cape)d.acc.userData.cape.rotation.x=Math.min(.45,d.spd*.07)+Math.sin(clock*9+i)*.05*Math.min(1,d.spd/3);
     if(!busy){lx=p.x;lz=p.z;}});
-  player.updateMatrixWorld(true);dogsW.forEach(d=>{d.g.updateMatrixWorld(true);if(driving)return;if(d.fetching||d.sniff)d.leash.forEach(m=>m.visible=false);else updateLeash(d);});
+  player.updateMatrixWorld(true);dogsW.forEach(d=>{d.g.updateMatrixWorld(true);if(driving)return;if(d.fetching||d.sniff||d.hide||photo)d.leash.forEach(m=>m.visible=false);else updateLeash(d);});
   // camera + sun
   const portrait=camera.aspect<1;
   if(mode==='title'){const a=clock*.06;camera.position.set(Math.sin(a)*48,portrait?34:24,Math.cos(a)*48);camera.lookAt(0,0,-6);}
-  else{if(inHome)camPitch=Math.max(.6,camPitch);const D=inHome?(portrait?17:13.5)*camZoom:(portrait?25:20)*camZoom*(driving?1.15:1),h=Math.cos(camPitch)*D;camPos.set(P.x+Math.sin(camYaw)*h,Math.sin(camPitch)*D,P.z+Math.cos(camYaw)*h);
+  else{if(inHome)camPitch=Math.max(.6,camPitch);if(photo)camPitch=Math.min(camPitch,.9);const D=inHome?(portrait?17:13.5)*camZoom:(portrait?25:20)*camZoom*(driving?1.15:1),h=Math.cos(camPitch)*D;camPos.set(P.x+Math.sin(camYaw)*h,Math.sin(camPitch)*D,P.z+Math.cos(camYaw)*h);
     if(!inHome)camPos.copy(camClear(P,camPos));const ah=driving?Math.min(3.5,Math.max(0,driving.v)*.15):0;
     camera.position.lerp(camPos,Math.min(1,dt*(driving?4.5:6)));look.lerp(tmpA.set(P.x+Math.sin(player.rotation.y)*ah,1,P.z+Math.cos(player.rotation.y)*ah),Math.min(1,dt*8));camera.lookAt(look);}
   sunL.position.set(P.x+20,40,P.z+15);sunL.target.position.set(P.x,0,P.z);
@@ -1808,25 +2169,26 @@ function update(dt){clock+=dt;
   // NPC markers bob, npcs look at player
   for(const id in npcs){const n=npcs[id];n.mk.position.y=(id==='judge'?3.3:3.2)+Math.sin(clock*4)*.15;
     if((P.x-n.x)**2+(P.z-n.z)**2<64){const a=Math.atan2(P.x-n.x,P.z-n.z);let da=a-n.g.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));n.g.rotation.y+=da*Math.min(1,dt*4);}}
-  {const tg=goalTarget();const dx=tg?tg.x-P.x:0,dz=tg?tg.z-P.z:0,dd=Math.hypot(dx,dz);arrow.visible=!!tg&&dd>5&&!paused&&!inHome;
+  {const tg=goalTarget();const dx=tg?tg.x-P.x:0,dz=tg?tg.z-P.z:0,dd=Math.hypot(dx,dz);arrow.visible=!!tg&&dd>(PG?2.5:5)&&!paused&&!inHome&&!photo;
    if(arrow.visible){arrow.position.set(P.x+dx/dd*1.8,.08,P.z+dz/dd*1.8);arrow.rotation.y=Math.atan2(dx,dz)+Math.PI;arrow.material.opacity=.65+Math.sin(clock*6)*.3;}}
   dayUpdate(dt);if(mode==='play'&&!S.st.hills&&P.z<-78&&P.z>-200){S.st.hills=1;toast('Welcome to Sunny Hills! Visit Ms. Twinkle for the Trick Show.');refreshHUD();}
   if(clouds)clouds.rotation.y+=dt*.006;water.position.y=.68+Math.sin(clock*2)*.02;spout.scale.setScalar(1+Math.sin(clock*5)*.12);
-  updateFx(dt);if(inHome)homeUpdate(dt);
+  updateFx(dt);seaFxUpdate(dt);if(inHome)homeUpdate(dt);
   cullT-=dt;if(cullT<=0){cullT=.25;const C=camera.position;for(const f of farCull)f.o.visible=(C.x-f.x)**2+(C.z-f.z)**2<f.r2;}
   updateAmb(dt,P);if(pondWater)pondWater.position.y=.05+Math.sin(clock*1.5)*.01;
   miniT-=dt;if(miniT<=0&&mode==='play'){miniT=.15;miniDraw();}
   // nearest action
   let best=null,bd=1e9;
-  if(!paused&&driving)best={label:'Hop out',fn:()=>exitCar()};else if(!paused&&inHome){best=homeAction(P);if(!best)for(const d of dogsW.concat(homeDogs)){const dd=Math.hypot(P.x-d.g.position.x,P.z-d.g.position.z);if(dd<2.8&&dd<bd){bd=dd;best={label:'Hug',fn:()=>petDog(d)};}}}
+  if(photo){}else if(!paused&&driving)best={label:'Hop out',fn:()=>exitCar()};else if(!paused&&inHome){best=homeAction(P);if(!best)for(const d of dogsW.concat(homeDogs)){const dd=Math.hypot(P.x-d.g.position.x,P.z-d.g.position.z);if(dd<2.8&&dd<bd){bd=dd;best={label:'Hug',fn:()=>petDog(d)};}}}
   else if(!paused){for(const s of spots){const d=Math.hypot(P.x-s.x,P.z-s.z);if(d<s.r&&d<bd){bd=d;best=s;}}
     if(!best)for(const s of digs)if(s.on&&s.found&&(P.x-s.x)**2+(P.z-s.z)**2<5.5){best={label:'Dig',fn:()=>digAt(s)};break;}
-    if(!best)for(const c of cars){if(Math.hypot(P.x-c.g.position.x,P.z-c.g.position.z)<3.4){best={label:'Drive',fn:()=>enterCar(c)};break;}}
+    if(!best&&!PG)for(const c of cars){if(Math.hypot(P.x-c.g.position.x,P.z-c.g.position.z)<3.4){best={label:'Drive',fn:()=>enterCar(c)};break;}}
     if(!best)for(const a of amb){if(a.g.visible&&(P.x-a.x)**2+(P.z-a.z)**2<9){best={label:'Say hi',fn:()=>{toast(a.line);beep(660,.08,'sine',.05);}};break;}}
     if(!best)for(const d of dogsW){const dd=Math.hypot(P.x-d.g.position.x,P.z-d.g.position.z);if(dd<2.8&&dd<bd){bd=dd;best={label:'Hug',fn:()=>petDog(d)};}}}
   if((best&&best.label)!==(current&&current.label)||!!best!==!!current){actBtn.hidden=!best;if(best)actBtn.textContent=best.label;}
   current=best;
   const tb=canThrow();if(ballBtn.hidden===tb)ballBtn.hidden=!tb;
+  {const cb=mode!=='play'||!!driving||!!PG;if($('camBtn').hidden!==cb)$('camBtn').hidden=cb;}
 }
 // keep the camera out of buildings: pull it in toward the player when a wall is in the way
 const camTmp=new THREE.Vector3();
@@ -1846,6 +2208,7 @@ function miniBuild(){const c=document.createElement('canvas');c.width=c.height=2
   k.fillStyle='#7cc45a';k.beginPath();k.arc(mx_(0),mz_(18),14*MS,0,7);k.fill();k.fillStyle='#5cc8f0';k.beginPath();k.arc(mx_(0),mz_(18),3*MS,0,7);k.fill();
   k.fillStyle='#4fb3e8';k.beginPath();k.arc(mx_(POND.x),mz_(POND.z),POND.r*MS,0,7);k.fill();
   k.fillStyle='#7a5233';k.fillRect(mx_(FARM.x-29),mz_(FARM.z-4),13*MS,16*MS);k.fillStyle='#c8343c';k.fillRect(mx_(FARM.x+5),mz_(FARM.z+5.5),10*MS,9*MS);
+  k.fillStyle='#a5dd7a';k.fillRect(mx_(PARK.x0),mz_(PARK.z0),(PARK.x1-PARK.x0)*MS,(PARK.z1-PARK.z0)*MS);k.fillStyle='#2f7d5b';for(const [dx,dz,rr] of[[0,2,3.2],[-3.4,-2,1.6],[-1.2,-4,1.6],[1.2,-4,1.6],[3.4,-2,1.6]]){k.beginPath();k.arc(mx_(PARK.x+dx),mz_(PARK.z+dz),rr*MS*1.3,0,7);k.fill();}
   for(const h of HOUSES){k.fillStyle='#'+h[2].toString(16).padStart(6,'0');k.fillRect(mx_(h[0]-4),mz_(h[1]-4),8*MS,8*MS);}
   const st=[['valu',-90,-35,'#1f5fbf','V'],['pawsh',0,-34,'#2f7d5b','P'],['lux',90,-34,'#2a2140','L'],['gear',-20,87,'#7b4fd6','F']];
   k.font='bold 12px Arial,sans-serif';k.textAlign='center';k.textBaseline='middle';
@@ -1873,6 +2236,7 @@ function init(){
   addNpc('mail',-35,-13,0,{shirt:0x3b82f6,hair:0x2b1a10,pants:0x2a2140,hat:0x3b82f6},'Postie Pip');
   addNpc('cupcakes',HILLS.bakery.x+3.3,HILLS.bakery.z+1.3,.4,{shirt:0xff9ec7,hair:0xc0502b,style:'buns',pants:0xffffff,cap:'none'},'Baker Bea');
   addNpc('trick',HILLS.stage.x+6.5,HILLS.stage.z+4,-.6,{shirt:0xb48cff,hair:0xffc53d,style:'long',pants:0x2a2140,skin:0xd9a37a},'Ms. Twinkle');
+  addNpc('park',62.5,91,2.4,{shirt:0x2f7d5b,hair:0x5a3418,style:'pony',pants:0x9a6232,hat:0x6b8e4e,skin:0xd9a37a},'Ranger Rae');
   addNpc('judge',101,-26,-.4,{shirt:0x2a2140,hair:0x9a9a9a,pants:0x2a2140,hat:0x2a2140},'Judge');
   for(let i=0;i<70;i++){const p=randPos(2);addItem('coin',p.x,p.z);}
   buildBall();buildDigs();
