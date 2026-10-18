@@ -7,13 +7,13 @@
   if(AC){var W=function(o){var c=new AC(o);ctxs.push(c);return c};W.prototype=AC.prototype;window.AudioContext=W;window.webkitAudioContext=W;}
   window.__pqPause=function(){ctxs.forEach(function(c){try{c.suspend()}catch(e){}})};
   window.__pqResume=function(){ctxs.forEach(function(c){try{c.resume()}catch(e){}})};
-  // Back works like Escape: closes an open menu, or opens the pause menu during play.
+  // Back works like Escape: closes an open menu, leaves photo mode, or opens the pause menu during play.
   // If neither happened (title screen), the app goes to the background.
   window.__pqBack=function(){
-    var w=document.getElementById('wrap'),before=w&&!w.hidden;
+    var w=document.getElementById('wrap'),ph=function(){return document.body.classList.contains('photo')},before=w&&!w.hidden||ph();
     dispatchEvent(new KeyboardEvent('keydown',{code:'Escape',key:'Escape'}));
     dispatchEvent(new KeyboardEvent('keyup',{code:'Escape',key:'Escape'}));
-    var after=w&&!w.hidden;
+    var after=w&&!w.hidden||ph();
     return (before||after)?'ok':'exit';
   };
 })();

@@ -1,10 +1,19 @@
 package com.jackandemily.puppyquest;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Base64;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -13,8 +22,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,10 +82,62 @@ public class MainActivity extends Activity {
                 return !HOST.equals(android.net.Uri.parse(url).getHost());
             }
         });
+        web.addJavascriptInterface(new PhotoBridge(), "PQAndroid");
         setContentView(web);
         hideSystemBars();
         if (state != null) web.restoreState(state);
         else web.loadUrl(START);
+    }
+
+    /** Lets the game's photo mode save a picture into the phone's Photos, in a "Puppy Quest" album. */
+    class PhotoBridge {
+        @JavascriptInterface
+        public String savePhoto(String base64, String name) {
+            try {
+                if (Build.VERSION.SDK_INT < 29
+                        && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                        }
+                    });
+                    return "ask";
+                }
+                byte[] data = Base64.decode(base64, Base64.DEFAULT);
+                String file = name.replaceAll("[^A-Za-z0-9._-]", "_");
+                ContentValues v = new ContentValues();
+                v.put(MediaStore.MediaColumns.DISPLAY_NAME, file);
+                v.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+                if (Build.VERSION.SDK_INT >= 29) {
+                    // MediaColumns.RELATIVE_PATH and IS_PENDING (Android 10), written by name because the build compiles against an older SDK.
+                    v.put("relative_path", Environment.DIRECTORY_PICTURES + "/Puppy Quest");
+                    v.put("is_pending", 1);
+                } else {
+                    File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Puppy Quest");
+                    dir.mkdirs();
+                    v.put(MediaStore.MediaColumns.DATA, new File(dir, file).getAbsolutePath());
+                }
+                ContentResolver cr = getContentResolver();
+                Uri uri = cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
+                if (uri == null) return "error";
+                OutputStream out = cr.openOutputStream(uri);
+                if (out == null) return "error";
+                try {
+                    out.write(data);
+                } finally {
+                    out.close();
+                }
+                if (Build.VERSION.SDK_INT >= 29) {
+                    ContentValues done = new ContentValues();
+                    done.put("is_pending", 0);
+                    cr.update(uri, done, null, null);
+                }
+                return "ok";
+            } catch (Exception e) {
+                return "error";
+            }
+        }
     }
 
     private WebResourceResponse asset(String path) {
