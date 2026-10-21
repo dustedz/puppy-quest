@@ -345,7 +345,7 @@ const STORES={
 const SLOTS=3,slotKey=i=>'puppyquest.slot'+i,LASTKEY='puppyquest.last',SETKEY='puppyquest.settings';
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-const SET=Object.assign({sound:true,music:true,lefty:false,track:0,autocam:true,daynight:true,season:'auto'},store.get(SETKEY)||{});
+const SET=Object.assign({sound:true,music:true,lefty:false,track:0,autocam:true,daynight:true,season:'auto',gfx:'auto'},store.get(SETKEY)||{});
 const saveSet=()=>store.set(SETKEY,SET);
 function fresh(){return{coins:0,dogs:[],pos:null,savedAt:0,owned:[],leash:null,look:{...LOOK0},
   q:{bones:{s:'new',n:0},flowers:{s:'new',n:0},walk:{s:'new',f:[0,0,0,0]},show:{s:'new'},chicks:{s:'new',n:0},ducks:{s:'new',n:0},mail:{s:'new',f:[0,0,0,0]},cupcakes:{s:'new',n:0}},home:{own:false,wall:0,floor:0,paint:0,f:{}},
@@ -426,8 +426,15 @@ const bark=()=>{beep(1300,.12,'sine',.08,1.5);setTimeout(()=>beep(1500,.14,'sine
 
 /* ---------- three setup ---------- */
 const canvas=document.getElementById('game');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
+// Graphics quality: 2 best looking, 1 balanced, 0 fastest. 'auto' starts from a guess about the device,
+// then steps down while playing if frames are slow, and remembers the result (SET.gfxAuto) for next time.
+const GFX=[{name:'Fastest',pr:.85,shadow:0,draw:.62,fx:.35,grass:false},{name:'Balanced',pr:1.15,shadow:1,draw:.82,fx:.6,grass:true},{name:'Best looking',pr:1.5,shadow:2,draw:1,fx:1,grass:true}];
+function gfxGuess(){const mem=navigator.deviceMemory||4,cores=navigator.hardwareConcurrency||4,touch=matchMedia('(pointer:coarse)').matches;
+  return mem<=2||cores<=2?0:mem<=4||cores<=4?1:touch&&mem<=6?1:2;}
+const gfxTier=()=>SET.gfx==='auto'||SET.gfx==null?(SET.gfxAuto??gfxGuess()):SET.gfx;
+let gfx=gfxTier();
+const renderer=new THREE.WebGLRenderer({canvas,antialias:gfx===2,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,GFX[gfx].pr));
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xbfe6ff);scene.fog=new THREE.Fog(0xbfe6ff,60,120);
 const camera=new THREE.PerspectiveCamera(50,1,.1,300);
@@ -483,7 +490,7 @@ const ROADS=[{x0:-122,x1:122,z0:-88.5,z1:-81.5},{x0:26.5,x1:33.5,z0:-81.5,z1:-25
 const onRoad=(x,z,p=0)=>ROADS.some(r=>x>r.x0-p&&x<r.x1+p&&z>r.z0-p&&z<r.z1+p);
 const noTree=[]; // yards, lawns and the farm stay clear of trees and rocks
 const inNoTree=(x,z,p=0)=>noTree.some(r=>x>r.x0-p&&x<r.x1+p&&z>r.z0-p&&z<r.z1+p);
-const farCull=[];function cullAdd(o,x,z,r=110){farCull.push({o,x,z,r2:r*r});}
+const farCull=[];function cullAdd(o,x,z,r=110,grass=false){farCull.push({o,x,z,r2:r*r,grass});}
 const POND={x:-95,z:25,r:11},FARM={x:100,z:45};
 const HOUSES=[[-46,0,0xf6b3c8],[-46,24,0x9fd0f5],[46,0,0xb9e6a8],[46,24,0xffd98a],
   [-100,89,0xffd98a,Math.PI],[-70,89,0xb9e6a8,Math.PI],[20,89,0xf6b3c8,Math.PI],[50,89,0x9fd0f5,Math.PI],[100,89,0xffc0a0,Math.PI],
@@ -681,7 +688,7 @@ function skyAndClouds(){
     fragmentShader:'uniform vec3 top,mid,bot,sun,sunC;varying vec3 vP;void main(){float h=vP.y;vec3 c=h>.12?mix(mid,top,smoothstep(.12,.7,h)):mix(bot,mid,smoothstep(-.05,.12,h));'+
       'float s=max(dot(vP,sun),0.);c+=sunC*(pow(s,600.)*1.2+pow(s,12.)*.18);gl_FragColor=vec4(c,1.);}'}));
   skyU=sky.material.uniforms;sky.renderOrder=-1;sky.frustumCulled=false;scene.add(sky);sky.onBeforeRender=()=>sky.position.copy(camera.position);
-  scene.background=new THREE.Color(0xd9f1ff);scene.fog.color.set(0xd2ecfb);scene.fog.near=40;scene.fog.far=108;
+  scene.background=new THREE.Color(0xd9f1ff);scene.fog.color.set(0xd2ecfb);scene.fog.near=40*GFX[gfx].draw;scene.fog.far=108*GFX[gfx].draw;
   clouds=new THREE.Group();scene.add(clouds);const cm=cloudM=new THREE.MeshPhongMaterial({color:0xffffff,emissive:0xdfe9f5,emissiveIntensity:.55,shininess:0,flatShading:true,fog:false});
   const puff=new THREE.IcosahedronGeometry(1,1);seed=99;
   for(let i=0;i<14;i++){const c=new THREE.Group(),a=rnd()*Math.PI*2,r=70+rnd()*60;c.position.set(Math.cos(a)*r,34+rnd()*22,Math.sin(a)*r);c.rotation.y=-a;
@@ -736,7 +743,7 @@ async function loadNature(){
         gv.boundingSphere=new THREE.Sphere(new THREE.Vector3(cx,5,cz),cs*.72+9);
         const im=new THREE.InstancedMesh(gv,mats[part.mat],cl.length);
         cl.forEach(([x,z,s,ry],i)=>{E.set(0,ry,0);Q.setFromEuler(E);M4.compose(V.set(x,0,z),Q,SC.set(s,s,s));im.setMatrixAt(i,M4);});
-        im.castShadow=!far;im.receiveShadow=true;scene.add(im);cullAdd(im,cx,cz,range+cs*.5);}}}
+        if(!far)natTrees.push(im);im.castShadow=!far&&GFX[gfx].shadow===2;im.receiveShadow=true;scene.add(im);cullAdd(im,cx,cz,range+cs*.5);}}}
   for(const d of Object.values(dec)){let nv=0,ni=0;for(const [g,cl] of d.L){nv+=g.attributes.position.count*cl.length;ni+=g.index.count*cl.length;}
     const P=new Float32Array(nv*3),N=new Float32Array(nv*3),U=new Float32Array(nv*2),I=new Uint32Array(ni);let ov=0,oi=0;
     for(const [g,cl] of d.L){const pa=g.attributes.position.array,na=g.attributes.normal.array,ua=g.attributes.uv.array,ia=g.index.array,n=g.attributes.position.count;
@@ -745,11 +752,12 @@ async function loadNature(){
           NV.set(na[i*3]/127,na[i*3+1]/127,na[i*3+2]/127).applyMatrix3(N3).normalize();N[(ov+i)*3]=NV.x;N[(ov+i)*3+1]=NV.y;N[(ov+i)*3+2]=NV.z;U[(ov+i)*2]=ua[i*2];U[(ov+i)*2+1]=ua[i*2+1];}
         for(let i=0;i<ia.length;i++)I[oi+i]=ia[i]+ov;ov+=n;oi+=ia.length;}}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));geo.setAttribute('uv',new THREE.BufferAttribute(U,2));
-    geo.setIndex(new THREE.BufferAttribute(I,1));geo.computeBoundingSphere();const me=new THREE.Mesh(geo,mats[d.mat]);me.castShadow=d.sh;me.receiveShadow=true;scene.add(me);cullAdd(me,d.cx,d.cz,d.range+d.cs*.5);}
+    geo.setIndex(new THREE.BufferAttribute(I,1));geo.computeBoundingSphere();const me=new THREE.Mesh(geo,mats[d.mat]);me.castShadow=d.sh;me.receiveShadow=true;scene.add(me);cullAdd(me,d.cx,d.cz,d.range+d.cs*.5,/Grass/.test(d.mat));}
   const fl=Object.entries(place).filter(([k])=>k.endsWith('|far')).flatMap(([,l])=>l);
   const tr=new THREE.InstancedMesh(new THREE.CylinderGeometry(.16,.26,2.6,6).translate(0,1.3,0),mats.PineTree_Bark,fl.length);
   fl.forEach(([x,z,s],i)=>{M4.compose(V.set(x,0,z),Q.identity(),SC.set(s,s,s));tr.setMatrixAt(i,M4);});tr.frustumCulled=false;scene.add(tr);
   for(const g of procTrees)scene.remove(g);
+  cullT=0;setTimeout(warmShaders,50);
 }
 
 
@@ -1678,8 +1686,35 @@ function applySeason(force){const s=season();if(s===seaNow&&!force)return;seaNow
   {const pm=matCache[0x7cc45a+'{}'];if(pm)pm.color.set(s==='winter'?0xe6eef6:s==='autumn'?0x9cbc58:0x7cc45a);}
   if(natureMats)for(const k in LEAF){const m=natureMats[k];if(!m||!m.userData.sea)continue;const v=LEAF[k][s];m.userData.sea.c.value.set(v?v[0]:0xffffff);m.userData.sea.a.value=v?v[1]:0;}
   buildSeaFx(SEASONS[s].fx);buildSeaDecor(s);}
+/* ---------- graphics quality ---------- */
+const natTrees=[];let shadowN=0;
+function applyGfx(t){gfx=t;const G=GFX[t],sm=renderer.shadowMap,ms=G.shadow===2?2048:1024,was=sm.enabled+'|'+sm.type;
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,G.pr));resize();
+  sm.enabled=G.shadow>0;sm.type=G.shadow===2?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;sm.autoUpdate=G.shadow!==1;sm.needsUpdate=true; // balanced: shadows redrawn every other frame
+  if(sunL.shadow.mapSize.x!==ms){sunL.shadow.mapSize.set(ms,ms);if(sunL.shadow.map){sunL.shadow.map.dispose();sunL.shadow.map=null;}}
+  sunL.castShadow=sm.enabled;for(const o of natTrees)o.castShadow=G.shadow===2;
+  scene.fog.near=40*G.draw;scene.fog.far=108*G.draw;cullT=0;
+  if(PV)PV.r.setPixelRatio(Math.min(devicePixelRatio||1,t===2?2:1));
+  if(seaNow)buildSeaFx(SEASONS[seaNow].fx);
+  if(was!==sm.enabled+'|'+sm.type){scene.traverse(o=>{if(o.material)[].concat(o.material).forEach(m=>m.needsUpdate=true);});setTimeout(warmShaders,50);}
+  fpsT=fpsN=fpsSlow=0;fpsWarm=3000;}
+// Auto mode: average the frame rate over 4 second spans; two slow spans in a row step the quality down one level.
+let fpsT=0,fpsN=0,fpsSlow=0,fpsWarm=3000;
+function fpsWatch(ms){if(document.hidden||ms>400||ms<=0)return; // skip tab switches and one-off hiccups
+  if(fpsWarm>0){fpsWarm-=ms;return;}fpsT+=ms;fpsN++;if(fpsT<4000)return;
+  const fps=fpsN*1000/fpsT;fpsT=fpsN=0;if(!(SET.gfx==='auto'||SET.gfx==null))return;
+  if(fps<(gfx===2?42:28)&&gfx>0){fpsSlow=Math.max(0,fpsSlow)+1;if(fpsSlow>=2){SET.gfxAuto=gfx-1;saveSet();applyGfx(gfx-1);}}
+  else if(fps>55&&SET.gfxAuto==null&&gfx<2){fpsSlow=Math.min(0,fpsSlow)-1;if(fpsSlow<=-2){SET.gfxAuto=gfx+1;saveSet();applyGfx(gfx+1);}} // the first guess was too careful: try one step up, once
+  else fpsSlow=0;}
+// with shadows off, soft round spots under the kid and the ESSAs keep them looking grounded
+const blobs=[],blobGeo=new THREE.CircleGeometry(.5,16).rotateX(-Math.PI/2),blobM=new THREE.MeshBasicMaterial({color:0x2a2140,transparent:true,opacity:.28,depthWrite:false});
+function blobUpdate(){const on=GFX[gfx].shadow===0,L=on?[[player,.9],...dogsW.map(d=>[d.g,.8])]:[];
+  while(blobs.length<L.length){const m=new THREE.Mesh(blobGeo,blobM);m.renderOrder=-1;scene.add(m);blobs.push(m);}
+  blobs.forEach((m,i)=>{const o=L[i]&&L[i][0];m.visible=!!(o&&o.visible&&o.parent===scene);if(m.visible){m.position.set(o.position.x,.04,o.position.z);m.scale.setScalar(L[i][1]*(o.scale.x||1));}});}
+// compile every material once up front (hidden far-away things too), so walking somewhere new doesn't hitch
+function warmShaders(){const hid=[];scene.traverse(o=>{if(!o.visible){hid.push(o);o.visible=true;}});try{renderer.compile(scene,camera);}catch(e){}for(const o of hid)o.visible=false;}
 function buildSeaFx(o){if(seaFx){scene.remove(seaFx);seaFx.geometry.dispose();seaFx=null;}if(!o)return;
-  const p=new Float32Array(o.n*3);for(let i=0;i<o.n;i++){p[i*3]=(Math.random()-.5)*64;p[i*3+1]=Math.random()*26;p[i*3+2]=(Math.random()-.5)*64;}
+  const n=Math.round(o.n*GFX[gfx].fx),p=new Float32Array(n*3);for(let i=0;i<n;i++){p[i*3]=(Math.random()-.5)*64;p[i*3+1]=Math.random()*26;p[i*3+2]=(Math.random()-.5)*64;}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));
   seaFx=new THREE.Points(g,new THREE.PointsMaterial({color:o.c,size:o.s,transparent:true,opacity:.9,depthWrite:false}));seaFx.userData.v=o.v;seaFx.frustumCulled=false;scene.add(seaFx);}
 function seaFxUpdate(dt){if(!seaFx)return;seaFx.visible=!inHome&&mode==='play';if(!seaFx.visible)return;const C=camera.position,P=seaFx.geometry.attributes.position,a=P.array,v=seaFx.userData.v;
@@ -2044,7 +2079,7 @@ function refreshHUD(){checkStickers();$('coinN').textContent=S.coins;let t;
 /* 3D preview for shops and the toy box */
 let PV=null;
 function pv(){if(PV)return PV;const c=document.createElement('canvas');
-  const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(Math.min(devicePixelRatio||1,gfx===2?2:1));
   const sc=new THREE.Scene();sc.add(new THREE.HemisphereLight(0xffffff,0xd8c8f0,.85));const dl=new THREE.DirectionalLight(0xfff3dc,.75);dl.position.set(2,4,3);sc.add(dl);
   const cam=new THREE.PerspectiveCamera(30,1.5,.1,50);cam.position.set(0,1.7,5);cam.lookAt(0,.95,0);
   const ped=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.5,.16,40),mat(0xffffff,{rough:.7}));ped.position.y=-.08;sc.add(ped);
@@ -2144,6 +2179,7 @@ function startGame(i,state){exitPhoto();pgEnd('quiet');if(driving)exitCar(true);
   if(!S.home.own&&S.dogs.length)setTimeout(()=>{if(mode==='play'&&!S.home.own&&wrap.hidden)toast('Psst! A Dream Home is for sale on Meadow Ln. Look for the heart on your map.');},5000);}
 function goTitle(){exitPhoto();pgEnd('quiet');rideEnd(true);save();mode='title';closeSheet();document.body.classList.add('in-title');$('title').hidden=false;refreshTitle();}
 const onOff=v=>v?'On':'Off';
+const gfxLabel=()=>SET.gfx==='auto'||SET.gfx==null?'Auto ('+GFX[gfx].name.toLowerCase()+')':GFX[SET.gfx].name;
 const ACTS={
   close:closeSheet,
   shopNav:d=>openStore(shopId,shopI+(+d)),
@@ -2191,12 +2227,14 @@ const ACTS={
     <div class="set">Music<button class="btn ${SET.music?'':'alt'}" data-act="tog" data-arg="music" aria-pressed="${SET.music}">${onOff(SET.music)}</button></div>
     <div class="set">Song<button class="btn alt" data-act="song">${(TRACKS[SET.track]||TRACKS[0]).name} ›</button></div>
     ${fsOK?`<div class="set">Full screen<button class="btn ${isFs()?'':'alt'}" data-act="fs">${onOff(isFs())}</button></div>`:`<p class="keys">Full screen is blocked in this window. For full screen, open the game link in your phone's web browser (like Chrome) and tap the full screen button.</p>`}
+    <div class="set">Graphics<button class="btn alt" data-act="gfxCycle">${gfxLabel()} ›</button></div>
     <div class="set">Season<button class="btn alt" data-act="seaCycle">${seaLabel()} ›</button></div>
     <div class="set">Day and night<button class="btn ${SET.daynight?'':'alt'}" data-act="tog" data-arg="daynight">${onOff(SET.daynight)}</button></div>
     <div class="set">Camera follows behind you<button class="btn ${SET.autocam?'':'alt'}" data-act="tog" data-arg="autocam">${onOff(SET.autocam)}</button></div>
     <div class="set">Goal box<button class="btn alt" data-act="tog" data-arg="goalMin">${SET.goalMin?'Small':'Big'}</button></div>
     <div class="set">Walk joystick side<button class="btn alt" data-act="tog" data-arg="lefty">${SET.lefty?'Right':'Left'}</button></div>
     <div class="row"><button class="btn alt" data-act="${mode==='play'?'pause':'close'}">Back</button></div>`),
+  gfxCycle:()=>{const o=['auto',2,1,0],i=o.indexOf(SET.gfx??'auto');SET.gfx=o[(i+1)%o.length];if(SET.gfx==='auto')delete SET.gfxAuto;saveSet();applyGfx(gfxTier());ACTS.settings();},
   seaCycle:()=>{const i=SEA_ORDER.indexOf(SET.season||'auto');SET.season=SEA_ORDER[(i+1)%SEA_ORDER.length];saveSet();applySeason();if(mode==='play'){spawnSeaHunt();refreshHUD();}ACTS.settings();},
   song:()=>{SET.track=((SET.track||0)+1)%TRACKS.length;SET.music=true;saveSet();mStep=0;ACTS.settings();},
   fs:()=>{toggleFs();setTimeout(()=>{if(!wrap.hidden&&sheet.querySelector('[data-act=fs]'))ACTS.settings();},400);},
@@ -2337,8 +2375,8 @@ function update(dt){clock+=dt;
    if(arrow.visible){arrow.position.set(P.x+dx/dd*1.8,.08,P.z+dz/dd*1.8);arrow.rotation.y=Math.atan2(dx,dz)+Math.PI;arrow.material.opacity=.65+Math.sin(clock*6)*.3;}}
   dayUpdate(dt);if(mode==='play'&&!S.st.hills&&P.z<-78&&P.z>-200){S.st.hills=1;toast('Welcome to Sunny Hills! Visit Ms. Twinkle for the Trick Show.');refreshHUD();}
   if(clouds)clouds.rotation.y+=dt*.006;water.position.y=.68+Math.sin(clock*2)*.02;spout.scale.setScalar(1+Math.sin(clock*5)*.12);
-  updateFx(dt);seaFxUpdate(dt);townUpdate(dt);if(inHome)homeUpdate(dt);
-  cullT-=dt;if(cullT<=0){cullT=.25;const C=camera.position;for(const f of farCull)f.o.visible=(C.x-f.x)**2+(C.z-f.z)**2<f.r2;}
+  updateFx(dt);seaFxUpdate(dt);blobUpdate();townUpdate(dt);if(inHome)homeUpdate(dt);
+  cullT-=dt;if(cullT<=0){cullT=.25;const C=camera.position;const k=GFX[gfx].draw**2,gr=GFX[gfx].grass;for(const f of farCull)f.o.visible=(gr||!f.grass)&&(C.x-f.x)**2+(C.z-f.z)**2<f.r2*k;}
   updateAmb(dt,P);if(pondWater)pondWater.position.y=.05+Math.sin(clock*1.5)*.01;
   miniT-=dt;if(miniT<=0&&mode==='play'){miniT=.15;miniDraw();}
   // nearest action
@@ -2360,7 +2398,8 @@ function camClear(P,c){for(let t=.08;t<=1;t+=.04){const x=P.x+(c.x-P.x)*t,y=1+(c
   for(const b of boxes)if(x>b.x0-1.6&&x<b.x1+1.6&&z>b.z0-1.6&&z<b.z1+1.6){const k=Math.max(.15,t-.06);return camTmp.set(P.x+(c.x-P.x)*k,Math.max(1+(c.y-1)*k,5+(1-k)*7),P.z+(c.z-P.z)*k);}}return c;}
 function resize(){if(PV&&PV.on)setTimeout(()=>{const b=sheet.querySelector('.pvbox');if(b&&PV.on)pvSize(b.clientWidth,b.clientHeight);},60);const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?58:50;camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
-function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);renderer.render(scene,camera);
+function frame(now){const ms=now-last,dt=Math.min(.05,ms/1000);last=now;fpsWatch(ms);update(dt);
+  if(!renderer.shadowMap.autoUpdate&&(++shadowN&1))renderer.shadowMap.needsUpdate=true;renderer.render(scene,camera);
   if(PV&&PV.on&&!wrap.hidden&&PV.dog){if(!PV.still)PV.dog.g.rotation.y+=dt*.8;else pvTrick(dt);const dd=PV.dog;if(dd.tail){dd.wagT=(dd.wagT||0)+dt*14;dd.tail.rotation.y=Math.sin(dd.wagT)*.5;}if(dd.acc&&dd.acc.userData.cape)dd.acc.userData.cape.rotation.x=.15+Math.sin(clock*5)*.06;PV.r.render(PV.sc,PV.cam);}requestAnimationFrame(frame);}
 
 /* ---------- mini map ---------- */
@@ -2406,7 +2445,7 @@ function init(){
   for(let i=0;i<70;i++){const p=randPos(2);addItem('coin',p.x,p.z);}
   buildBall();buildDigs();
   player.position.set(0,0,-12);
-  resize();refreshHUD();goTitle();requestAnimationFrame(frame);
+  applyGfx(gfx);refreshHUD();goTitle();requestAnimationFrame(frame);
 }
 Promise.race([document.fonts?document.fonts.load('80px "Lilita One"'):Promise.resolve(),new Promise(r=>setTimeout(r,2500))]).catch(()=>{}).then(init);
 })();
