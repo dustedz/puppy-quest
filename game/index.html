@@ -490,7 +490,8 @@ const ROADS=[{x0:-122,x1:122,z0:-88.5,z1:-81.5},{x0:26.5,x1:33.5,z0:-81.5,z1:-25
 const onRoad=(x,z,p=0)=>ROADS.some(r=>x>r.x0-p&&x<r.x1+p&&z>r.z0-p&&z<r.z1+p);
 const noTree=[]; // yards, lawns and the farm stay clear of trees and rocks
 const inNoTree=(x,z,p=0)=>noTree.some(r=>x>r.x0-p&&x<r.x1+p&&z>r.z0-p&&z<r.z1+p);
-const farCull=[];function cullAdd(o,x,z,r=110,grass=false){farCull.push({o,x,z,r2:r*r,grass});}
+// lod: 'hi' shows only on Balanced and Best, 'lo' only on Fastest
+const farCull=[];function cullAdd(o,x,z,r=110,grass=false,lod=null){farCull.push({o,x,z,r2:r*r,grass,lod});}
 const POND={x:-95,z:25,r:11},FARM={x:100,z:45};
 const HOUSES=[[-46,0,0xf6b3c8],[-46,24,0x9fd0f5],[46,0,0xb9e6a8],[46,24,0xffd98a],
   [-100,89,0xffd98a,Math.PI],[-70,89,0xb9e6a8,Math.PI],[20,89,0xf6b3c8,Math.PI],[50,89,0x9fd0f5,Math.PI],[100,89,0xffc0a0,Math.PI],
@@ -699,6 +700,9 @@ const GROUND={spring:['#7cc35a',['#72b850','#8ccd68','#6eb24c','#96d46f','#68aa4
 function groundTex(sea='summer'){const [base,dots]=GROUND[sea]||GROUND.summer,c=document.createElement('canvas');c.width=c.height=256;const k=c.getContext('2d');k.fillStyle=base;k.fillRect(0,0,256,256);seed=5;
   for(let i=0;i<900;i++){const x=rnd()*256,y=rnd()*256,r=2+rnd()*9;k.fillStyle=dots[i%dots.length];k.globalAlpha=.35;k.beginPath();k.arc(x,y,r,0,7);k.fill();}
   k.globalAlpha=1;const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(52,52);t.anisotropy=4;return t;}
+const trunkG=new Map();
+function trunkGeo(g){if(trunkG.has(g))return trunkG.get(g);g.computeBoundingBox();const H=g.boundingBox.max.y,r=Math.max(.12,Math.min(.4,H*.04));
+  const t=new THREE.CylinderGeometry(r*.6,r,H*.62,7,1,true).translate(0,H*.31,0);trunkG.set(g,t);return t;}
 async function loadNature(){
   const base='nature/';const man=await (await fetch(base+'nature.json')).json();const raw=atob(man.bin),bin=new ArrayBuffer(raw.length),bu=new Uint8Array(bin);for(let i=0;i<raw.length;i++)bu[i]=raw.charCodeAt(i);
   const tl=new THREE.TextureLoader(),mats={};
@@ -743,7 +747,11 @@ async function loadNature(){
         gv.boundingSphere=new THREE.Sphere(new THREE.Vector3(cx,5,cz),cs*.72+9);
         const im=new THREE.InstancedMesh(gv,mats[part.mat],cl.length);
         cl.forEach(([x,z,s,ry],i)=>{E.set(0,ry,0);Q.setFromEuler(E);M4.compose(V.set(x,0,z),Q,SC.set(s,s,s));im.setMatrixAt(i,M4);});
-        if(!far)natTrees.push(im);im.castShadow=!far&&GFX[gfx].shadow===2;im.receiveShadow=true;scene.add(im);cullAdd(im,cx,cz,range+cs*.5);}}}
+        if(!far)natTrees.push(im);im.castShadow=!far&&GFX[gfx].shadow===2;im.receiveShadow=true;scene.add(im);
+        // the detailed bark (branches hidden inside the leaves) is the heaviest part of the town; Fastest swaps it for a plain trunk
+        const bark=!far&&/Bark/.test(part.mat);cullAdd(im,cx,cz,range+cs*.5,false,bark?'hi':null);
+        if(bark){const lt=new THREE.InstancedMesh(trunkGeo(part.g),mats[part.mat],cl.length);for(let i=0;i<cl.length;i++){im.getMatrixAt(i,M4);lt.setMatrixAt(i,M4);}
+          lt.geometry.boundingSphere=gv.boundingSphere;lt.receiveShadow=true;scene.add(lt);cullAdd(lt,cx,cz,range+cs*.5,false,'lo');}}}}
   for(const d of Object.values(dec)){let nv=0,ni=0;for(const [g,cl] of d.L){nv+=g.attributes.position.count*cl.length;ni+=g.index.count*cl.length;}
     const P=new Float32Array(nv*3),N=new Float32Array(nv*3),U=new Float32Array(nv*2),I=new Uint32Array(ni);let ov=0,oi=0;
     for(const [g,cl] of d.L){const pa=g.attributes.position.array,na=g.attributes.normal.array,ua=g.attributes.uv.array,ia=g.index.array,n=g.attributes.position.count;
@@ -2354,9 +2362,14 @@ const ballBtn=$('ballBtn');ballBtn.addEventListener('click',throwBall);
 let clock=0,last=performance.now(),cullT=0;
 const arrow=(()=>{const sh=new THREE.Shape();sh.moveTo(0,.9);sh.lineTo(.55,0);sh.lineTo(.2,0);sh.lineTo(.2,-.6);sh.lineTo(-.2,-.6);sh.lineTo(-.2,0);sh.lineTo(-.55,0);sh.lineTo(0,.9);
   const m=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshBasicMaterial({color:0xffc53d,transparent:true,opacity:.9,depthWrite:false}));m.rotation.order='YXZ';m.rotation.x=-Math.PI/2;scene.add(m);return m;})();
+// saving up for an ESSA: point at the nearest gold coin, and stick with it unless another is much closer
+let coinTg=null;
+function nearCoin(){const P=player.position,d2=it=>(it.x-P.x)**2+(it.z-P.z)**2;let b=null,bd=1e9;
+  for(const it of items)if(it.kind==='coin'&&it.on){const d=d2(it);if(d<bd){bd=d;b=it;}}
+  if(coinTg&&coinTg.on&&b&&d2(coinTg)<bd*1.8)return coinTg;return coinTg=b;}
 function goalTarget(){
   if(PG&&PG.k==='agility'&&PG.cd<=0&&HOOPS[PG.n])return HOOPS[PG.n];
-  for(const t of[1,2,3])if(!hasTier(t))return S.coins>=minPrice(t)?spots[t-1]:null;
+  for(const t of[1,2,3])if(!hasTier(t))return S.coins>=minPrice(t)?spots[t-1]:nearCoin();
   for(const id in Q)if(S.q[id].s==='active'&&qCount(id)>=Q[id].need)return npcs[id];
   if(S.q.show.s!=='done'&&showReqs().every(x=>x[0]))return npcs.judge;
   const w=curWish();if(w&&S.home.own&&S.q.show.s==='done'&&S.coins>=w.cost-wishHave(w))return JAR;return null;}const camPos=new THREE.Vector3(),look=new THREE.Vector3();
@@ -2419,8 +2432,8 @@ function update(dt){clock+=dt;
    if(arrow.visible){arrow.position.set(P.x+dx/dd*1.8,.08,P.z+dz/dd*1.8);arrow.rotation.y=Math.atan2(dx,dz)+Math.PI;arrow.material.opacity=.65+Math.sin(clock*6)*.3;}}
   dayUpdate(dt);if(mode==='play'&&!S.st.hills&&P.z<-78&&P.z>-200){S.st.hills=1;toast('Welcome to Sunny Hills! Visit Ms. Twinkle for the Trick Show.');refreshHUD();}
   if(clouds)clouds.rotation.y+=dt*.006;water.position.y=.68+Math.sin(clock*2)*.02;spout.scale.setScalar(1+Math.sin(clock*5)*.12);
-  updateFx(dt);bumpUpdate(dt);seaFxUpdate(dt);blobUpdate();townUpdate(dt);if(inHome)homeUpdate(dt);
-  cullT-=dt;if(cullT<=0){cullT=.25;const C=camera.position;const k=GFX[gfx].draw**2,gr=GFX[gfx].grass;for(const f of farCull)f.o.visible=(gr||!f.grass)&&(C.x-f.x)**2+(C.z-f.z)**2<f.r2*k;}
+  updateFx(dt);fadeTick(dt);bumpUpdate(dt);seaFxUpdate(dt);blobUpdate();townUpdate(dt);if(inHome)homeUpdate(dt);
+  cullT-=dt;if(cullT<=0){cullT=.25;const C=camera.position;const k=GFX[gfx].draw**2,gr=GFX[gfx].grass;const lo=gfx===0;for(const f of farCull)f.o.visible=(gr||!f.grass)&&(!f.lod||(f.lod==='lo')===lo)&&(C.x-f.x)**2+(C.z-f.z)**2<f.r2*k;}
   updateAmb(dt,P);if(pondWater)pondWater.position.y=.05+Math.sin(clock*1.5)*.01;
   miniT-=dt;if(miniT<=0&&mode==='play'){miniT=.15;miniDraw();}
   // nearest action
@@ -2438,8 +2451,25 @@ function update(dt){clock+=dt;
 }
 // keep the camera out of buildings: pull it in toward the player when a wall is in the way
 const camTmp=new THREE.Vector3();
-function camClear(P,c){for(let t=.08;t<=1;t+=.04){const x=P.x+(c.x-P.x)*t,y=1+(c.y-1)*t,z=P.z+(c.z-P.z)*t;if(y>9.5)break;
-  for(const b of boxes)if(x>b.x0-1.6&&x<b.x1+1.6&&z>b.z0-1.6&&z<b.z1+1.6){const k=Math.max(.15,t-.06);return camTmp.set(P.x+(c.x-P.x)*k,Math.max(1+(c.y-1)*k,5+(1-k)*7),P.z+(c.z-P.z)*k);}}return c;}
+// A building in the way fades to see-through, so the camera stays put instead of diving into its roof.
+// Colliders without their own building model (fences, stalls) still pull the camera in like before.
+let occ=null,occN=-1;const fadeWant=new Set(),fadeOn=new Map();
+function occBuild(){occN=boxes.length;occ=boxes.map(()=>[]);const bb=new THREE.Box3(),c=new THREE.Vector3(),sz=new THREE.Vector3();
+  for(const o of scene.children){if(!o.isGroup||o===player||o===roomG||dogsW.some(d=>d.g===o))continue;bb.setFromObject(o);if(bb.isEmpty())continue;bb.getCenter(c);bb.getSize(sz);if(sz.y<2.5)continue;
+    boxes.forEach((b,i)=>{if(c.x>b.x0-1&&c.x<b.x1+1&&c.z>b.z0-1&&c.z<b.z1+1&&sz.x<b.x1-b.x0+9&&sz.z<b.z1-b.z0+9)occ[i].push(o);});}}
+function camClear(P,c){if(occN!==boxes.length)occBuild();
+  for(let t=.08;t<=1;t+=.04){const x=P.x+(c.x-P.x)*t,y=1+(c.y-1)*t,z=P.z+(c.z-P.z)*t;if(y>9.5)break;
+  for(let i=0;i<boxes.length;i++){const b=boxes[i];if(x>b.x0-1.6&&x<b.x1+1.6&&z>b.z0-1.6&&z<b.z1+1.6){
+    if(occ[i].length){occ[i].forEach(g=>fadeWant.add(g));continue;}
+    const k=Math.max(.15,t-.06);return camTmp.set(P.x+(c.x-P.x)*k,Math.max(1+(c.y-1)*k,5+(1-k)*7),P.z+(c.z-P.z)*k);}}}return c;}
+function fadeTick(dt){for(const g of fadeWant)if(!fadeOn.has(g))fadeOn.set(g,{k:0,mats:new Map()});
+  for(const [g,f] of fadeOn){const want=fadeWant.has(g);f.k=Math.max(0,Math.min(1,f.k+(want?dt*5:-dt*4)));
+    g.traverse(m=>{if(!(m.isMesh||m.isSprite)||Array.isArray(m.material))return;
+      if(f.k>0){const src=m.userData.fadeSrc||(m.userData.fadeSrc=m.material);let fm=f.mats.get(src);
+        if(!fm){fm=src.clone();fm.transparent=true;fm.depthWrite=false;f.mats.set(src,fm);}fm.opacity=src.opacity*(1-.85*f.k);m.material=fm;}
+      else if(m.userData.fadeSrc){m.material=m.userData.fadeSrc;delete m.userData.fadeSrc;}});
+    if(f.k<=0&&!want){f.mats.forEach(x=>x.dispose());fadeOn.delete(g);}}
+  fadeWant.clear();}
 function resize(){if(PV&&PV.on)setTimeout(()=>{const b=sheet.querySelector('.pvbox');if(b&&PV.on)pvSize(b.clientWidth,b.clientHeight);},60);const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?58:50;camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
 function frame(now){const ms=now-last,dt=Math.min(.05,ms/1000);last=now;fpsWatch(ms);update(dt);
