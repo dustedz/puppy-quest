@@ -907,7 +907,9 @@ function spawnDog(i,x,z){const info=S.dogs[i],d=buildDog(info.type);d.idx=i;d.na
   d.g.position.set(x,0,z);scene.add(d.g);d.neckObj=new THREE.Object3D();d.body.add(d.neckObj);
   d.label=sprite(info.name,{fg:'#fffaf2',size:52});d.label.scale.set(1.9,.7,1);d.label.position.set(0,d.anchors.top.y+.6,0);d.g.add(d.label);
   d.leash=[];dress(d);dogsW.push(d);return d;}
-function respawnDogs(){dogsW.forEach(d=>{scene.remove(d.g);d.leash.forEach(m=>scene.remove(m));});dogsW.length=0;const P=player.position;let k=0;
+// free the GPU memory of a dog (or its old outfit) that is gone for good; materials from mat() are shared, so only name tags lose theirs
+function freeObj(o){if(o)o.traverse(c=>{if(c.geometry&&c.geometry!==leashGeo)c.geometry.dispose();if(c.isSprite){if(c.material.map)c.material.map.dispose();c.material.dispose();}});}
+function respawnDogs(){dogsW.forEach(d=>{scene.remove(d.g);freeObj(d.g);d.leash.forEach(m=>scene.remove(m));});dogsW.length=0;const P=player.position;let k=0;
   S.dogs.forEach((d,i)=>{if(d.out!==false){spawnDog(i,P.x-1.5-k*1.8,P.z-.5-k*.5);k++;}});}
 function plushTag(d){const C=d.anchors.chest,x=.5*C.sx+.02,z=d.tier===1?-.3:-.55,y=C.y-.05;
   const t=new THREE.Group();t.position.set(x,y,z);t.rotation.y=Math.PI/2;d.body.add(t);
@@ -929,7 +931,7 @@ function heartMesh(r,m){const sh=new THREE.Shape();sh.moveTo(0,-r);sh.bezierCurv
 const lighterHex=(c,k)=>new THREE.Color(c).lerp(new THREE.Color(0xffffff),k).getHex();
 const XAX=new THREE.Vector3(1,0,0),YUP=new THREE.Vector3(0,1,0);
 function dressWith(d,gear){
-  if(d.acc)d.body.remove(d.acc);if(d.hacc)d.head.remove(d.hacc);
+  if(d.acc){d.body.remove(d.acc);freeObj(d.acc);}if(d.hacc){d.head.remove(d.hacc);freeObj(d.hacc);}
   const a=new THREE.Group(),ha=new THREE.Group();d.acc=a;d.hacc=ha;d.body.add(a);d.head.add(ha);a.userData.cape=null;
   const A=d.anchors,R=.5,N=A.neck,C=A.chest,H=A.hd,T=A.torso,RX=N.rx-Math.PI/2,uy=Math.sin(N.rx),uz=-Math.cos(N.rx);
   const top=new THREE.Vector3(0,N.y+R*N.sy*uy,N.z+R*N.sy*uz),bot=new THREE.Vector3(0,N.y-R*N.sy*uy,N.z-R*N.sy*uz);
@@ -1171,7 +1173,7 @@ function refreshRoom(){if(!roomG)return;wallM.color.set(WALL_C[S.home.wall]||WAL
 function homeDogSpots(){const out=[],b=S.home.f.dogbeds;
   if(b){const c=Math.cos(b.r||0),s=Math.sin(b.r||0);for(const x of BEDS4)out.push({x:ROOM.x+b.x+x*c,z:ROOM.z+b.z-x*s,ry:b.r||0,y:.12});}
   for(let i=0;i<12;i++)out.push({x:ROOM.x-8+(i%6)*1.5,z:ROOM.z+2.8-Math.floor(i/6)*1.4,ry:0,y:0});return out;}
-function homeDogsClear(){homeDogs.forEach(d=>scene.remove(d.g));homeDogs.length=0;}
+function homeDogsClear(){homeDogs.forEach(d=>{scene.remove(d.g);freeObj(d.g);});homeDogs.length=0;}
 function homeDogsBuild(){homeDogsClear();if(!inHome)return;const sp=homeDogSpots();let k=0;
   S.dogs.forEach((info,i)=>{if(info.out!==false)return;const d=buildDog(info.type),s=sp[k++];dressWith(d,info.gear||{});d.idx=i;d.name=info.name;d.jump=0;d.wagT=Math.random()*9;
     d.g.position.set(s.x,s.y,s.z);d.g.rotation.y=s.ry;d.baseY=s.y;scene.add(d.g);homeDogs.push(d);});}
@@ -2124,7 +2126,7 @@ function pv(){if(PV)return PV;const c=document.createElement('canvas');
   const cam=new THREE.PerspectiveCamera(30,1.5,.1,50);cam.position.set(0,1.7,5);cam.lookAt(0,.95,0);
   const ped=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.5,.16,40),mat(0xffffff,{rough:.7}));ped.position.y=-.08;sc.add(ped);
   return PV={c,r,sc,cam,dog:null,type:null,on:false,thumbs:{}};}
-function pvShow(key,build,ty=.95){const P=pv();P.cam.lookAt(0,ty,0);P.still=false;P.trick=null;if(P.key===key)return;if(P.dog)P.sc.remove(P.dog.g);P.dog=build();P.key=key;P.dog.g.rotation.y=.7;P.sc.add(P.dog.g);}
+function pvShow(key,build,ty=.95){const P=pv();P.cam.lookAt(0,ty,0);P.still=false;P.trick=null;if(P.key===key)return;if(P.dog){P.sc.remove(P.dog.g);freeObj(P.dog.g);}P.dog=build();P.key=key;P.dog.g.rotation.y=.7;P.sc.add(P.dog.g);}
 // trick show moves in the preview box
 function pvTrick(dt){const P=PV,d=P.dog,T=P.trick;if(!T||!d.body)return;T.t+=dt;const u=Math.min(1,T.t/.75),b=Math.sin(u*Math.PI);
   d.g.rotation.y=.45+(T.k==='spin'?u*Math.PI*2:0);d.g.position.y=T.k==='jump'?b*.9:0;d.body.rotation.x=T.k==='sit'?-b*.45:0;
