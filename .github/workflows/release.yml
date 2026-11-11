@@ -17,10 +17,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Android build tools
+      - name: Use the runner's Android SDK
+        # GitHub's runners already ship an Android SDK and Java, so the build needs no apt downloads
+        # (apt hung for 10+ minutes when the runner couldn't reach Ubuntu's mirror on 2026-11-11).
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq openjdk-21-jdk-headless aapt apksigner zipalign dalvik-exchange android-sdk-platform-23 zip unzip
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          BTV="$(ls "$SDK/build-tools" | sort -V | tail -1)"
+          PLAT="$(ls -d "$SDK"/platforms/android-[0-9]* | sort -V | tail -1)"
+          echo "Android SDK $SDK, build-tools $BTV, platform $(basename "$PLAT")"
+          echo "BUILD_TOOLS=$SDK/build-tools/$BTV" >> "$GITHUB_ENV"
+          echo "ANDROID_JAR=$PLAT/android.jar" >> "$GITHUB_ENV"
+          if [ -n "${JAVA_HOME_21_X64:-}" ]; then echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"; echo "$JAVA_HOME_21_X64/bin" >> "$GITHUB_PATH"; fi
+          ls "$SDK/build-tools/$BTV"/{aapt2,d8,zipalign,apksigner}
 
       - name: Read version
         env:
