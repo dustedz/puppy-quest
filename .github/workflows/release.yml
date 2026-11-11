@@ -18,9 +18,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Android build tools
+        timeout-minutes: 15
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq openjdk-21-jdk-headless aapt apksigner zipalign dalvik-exchange android-sdk-platform-23 zip unzip
+          # GitHub's default Ubuntu mirror (azure.archive.ubuntu.com) sometimes can't be reached and apt
+          # hangs for many minutes. Give up on a mirror fast, retry, and fall back to the main Ubuntu archive.
+          APT='-o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20'
+          PKGS='openjdk-21-jdk-headless aapt apksigner zipalign dalvik-exchange android-sdk-platform-23 zip unzip'
+          if ! (sudo timeout 180 apt-get update -qq $APT --error-on=any && sudo timeout 420 apt-get install -y -qq $APT $PKGS); then
+            echo "::warning::Default Ubuntu mirror failed, switching to archive.ubuntu.com"
+            sudo sed -i -E 's#mirror\+file:/etc/apt/apt-mirrors.txt|https?://azure\.archive\.ubuntu\.com/ubuntu/?#http://archive.ubuntu.com/ubuntu/#g' /etc/apt/sources.list.d/*.sources /etc/apt/sources.list 2>/dev/null || true
+            sudo apt-get update -qq $APT
+            sudo apt-get install -y -qq $APT $PKGS
+          fi
 
       - name: Read version
         env:
