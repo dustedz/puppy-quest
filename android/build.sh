@@ -11,9 +11,12 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 if [ -z "${GAME:-}" ]; then
   if [ -d "$HERE/../game" ]; then GAME="$HERE/../game"; else GAME="$HERE/../../dog-game"; fi
 fi
+# Debian's packaged SDK by default. ANDROID_JAR + BUILD_TOOLS can point at a regular Android SDK instead
+# (the release workflow uses the SDK that GitHub's runners come with, so it needs no apt downloads).
 SDK=/usr/lib/android-sdk
-JAR="$SDK/platforms/android-23/android.jar"
-BT="$SDK/build-tools/debian"
+JAR="${ANDROID_JAR:-$SDK/platforms/android-23/android.jar}"
+BT="${BUILD_TOOLS:-$SDK/build-tools/debian}"
+if [ -x "$BT/apksigner" ]; then APKSIGNER="$BT/apksigner"; else APKSIGNER=apksigner; fi
 BUNDLETOOL_VER=1.17.2
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/puppy-quest-android"
 B="$(mktemp -d)"; trap 'rm -rf "$B"' EXIT
@@ -55,7 +58,8 @@ grep -oE 'android:version(Code|Name)="[^"]*"' "$MANIFEST" | tr '\n' ' '; echo
 echo "2/6 Compiling Java"
 mkdir -p "$B/classes"
 javac -nowarn -Xlint:-options --release 8 -cp "$JAR" -d "$B/classes" $(find "$HERE/src/java" -name '*.java')
-"$BT/dx" --dex --min-sdk-version=24 --output="$B/classes.dex" "$B/classes"
+if [ -x "$BT/dx" ]; then "$BT/dx" --dex --min-sdk-version=24 --output="$B/classes.dex" "$B/classes"
+else "$BT/d8" --min-api 24 --lib "$JAR" --output "$B" $(find "$B/classes" -name '*.class'); fi
 
 echo "3/6 Linking resources"
 "$BT/aapt2" compile --dir "$HERE/src/res" -o "$B/res.zip"
@@ -74,9 +78,9 @@ if [ ! -f "$KS" ]; then
   keytool -genkeypair -keystore "$KS" -storepass android -keypass android -alias androiddebugkey \
     -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 >/dev/null 2>&1
 fi
-apksigner sign --ks "$KS" --ks-pass "pass:$KS_PASS" --key-pass "pass:$KS_PASS" --ks-key-alias "$KS_ALIAS" \
+"$APKSIGNER" sign --ks "$KS" --ks-pass "pass:$KS_PASS" --key-pass "pass:$KS_PASS" --ks-key-alias "$KS_ALIAS" \
   --min-sdk-version 24 --v4-signing-enabled false --out "$OUT/puppy-quest-debug.apk" "$B/aligned.apk"
-apksigner verify "$OUT/puppy-quest-debug.apk"
+"$APKSIGNER" verify "$OUT/puppy-quest-debug.apk"
 
 echo "5/6 Building the Play Store bundle (.aab)"
 BTJ="$CACHE/bundletool-all-$BUNDLETOOL_VER.jar"
